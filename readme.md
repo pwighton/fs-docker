@@ -1,5 +1,7 @@
 # fs-docker
 
+[Building FS7 docker containers with neurodocker](20200507-fs7-neurodocker.md)
+
 Dockerfiles to support:
 - developing FreeSurfer (compiling FreeSurfer from source)
 - running development versions of FreeSurfer (using locally compiled FreeSurfer binaries)
