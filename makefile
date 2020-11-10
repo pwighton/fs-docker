@@ -1,7 +1,8 @@
-all: fs-build fs-run
+all: fs-build
+#all: fs-build fs-run
 
 fs-build:
-	cd ./build && docker build -t corticometrics/freesurfer-build .
+	cd ./build && docker build -t pwighton/fs-dev-build .
 
-fs-run:
-	cd ./run && docker build -t corticometrics/freesurfer-run .
+#fs-run:
+#	cd ./run && docker build -t pwighton/fs-dev-runrun .

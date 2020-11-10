@@ -2,6 +2,9 @@
 # Based on Ubuntu 16.04 LTS (Xenial Xerus)
 FROM ubuntu:xenial
 
+
+# Complie with gcc/g++ 4.8
+# matching g++ version with https://travis-ci.org/github/freesurfer/freesurfer
 RUN apt-get update -qq && \
     apt-get install -y -q \
         automake1.11 \
@@ -10,6 +13,9 @@ RUN apt-get update -qq && \
         build-essential \
         bzip2 \
         curl \
+        gcc-4.8-base \
+        gcc-4.8 \
+        g++-4.8 \
         gfortran \
         libbz2-dev \
         libfreetype6-dev \
@@ -38,6 +44,8 @@ RUN apt-get update -qq && \
         uuid-dev \
         vim-common \
         wget && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 100 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -54,4 +62,14 @@ RUN pip3 install -q --no-cache-dir -U pip && \
     pip3 install -q --no-cache-dir wheel && \
     sync
 
-WORKDIR /code
+# Mount point for FreeSurfer binaries (result of compilation)
+VOLUME /fs-bin
+
+# Mount point for the FreeSurfer pre-compiled packages 
+# http://surfer.nmr.mgh.harvard.edu/pub/data/fspackages/prebuilt/centos7-packages.tar.gz
+VOLUME /fs-pkg
+
+# Mount point for FreeSurfer code https://github.com/freesurfer/freesurfer
+# Set the workdir to here so we're ready to compile
+VOLUME /fs-code
+WORKDIR /fs-code
