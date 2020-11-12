@@ -1,11 +1,9 @@
 # Dockerfile to run recon-all (from the 'dev' branch of FreeSurfer)
 # Based on Ubuntu 16.04.3 LTS (Xenial Xerus)
 #
-# This FreeSurfer environment assumes
-#    The freesurfer install ($FREESURFER_HOME) directory is
-#      - `/freesurfer-bin`
-#    The freesurfer subject directory is
-#      - `/subjects`
+# This environment assumes:
+#   - The freesurfer install diretory ($FREESURFER_HOME) is: `/fs-bin`
+#   - The freesurfer subject's directory ($SUBJECTS_DIR) is: `/fs-sub`
 #
 # These must be mounted by the user.
 

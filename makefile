@@ -4,5 +4,8 @@ all: fs-build
 fs-build:
 	cd ./build && docker build -t pwighton/fs-dev-build .
 
-#fs-run:
-#	cd ./run && docker build -t pwighton/fs-dev-runrun .
+fs-build-nc:
+	cd ./build && docker build --no-cache -t pwighton/fs-dev-build .
+
+fs-run:
+	cd ./run && docker build -t pwighton/fs-dev-run .
