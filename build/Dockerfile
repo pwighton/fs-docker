@@ -53,12 +53,9 @@ RUN apt-get update -qq && \
         wget && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 100 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 100 && \
-    update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-4.8 100 
-    
-    
-    #&& \
-    #apt-get clean && \
-    #rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-4.8 100 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install cmake 3.12.3
 RUN curl -sSL --retry 5 https://cmake.org/files/v3.12/cmake-3.12.3.tar.gz | tar -xz && \
