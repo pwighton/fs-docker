@@ -1,7 +1,5 @@
 # fs-docker
 
-[Building FS7 docker containers with neurodocker](20200507-fs7-neurodocker.md)
-
 Notes on how containers can support:
 - Running Released Versions of FreeSurfer
 - Running FreeView
@@ -24,7 +22,9 @@ neurodocker generate docker \
     | docker build -t pwighton/freesurfer:7.1.1 -
 ```
 
-The container [`pwighton/freesurfer:7.1.1-min`](https://hub.docker.com/layers/128181705/pwighton/freesurfer/7.1.1-min/images/sha256-d6b94ae6ff7a2490ded07bacba1eacd04d02f259cdfb94167dcccdaaf02c446d?context=explore) is a minimized version (359.8 MB compressed) of `pwighton/freesurfer:7.1.1` that supports both the cross and long streams of [recon-all](`pwighton/freesurfer:7.1.1`).  See [`notes/20201127-fs711-neurodocker-min.md`](notes/20201127-fs711-neurodocker-min.md) for details on how this container was created using neurodocker.
+The container [`pwighton/freesurfer:7.1.1-min`](https://hub.docker.com/layers/128181705/pwighton/freesurfer/7.1.1-min/images/sha256-d6b94ae6ff7a2490ded07bacba1eacd04d02f259cdfb94167dcccdaaf02c446d?context=explore) is a minimized version (359.8 MB compressed) of `pwighton/freesurfer:7.1.1` that supports both the cross and long streams of [recon-all](`pwighton/freesurfer:7.1.1`).
+
+See [`notes/20201127-fs711-neurodocker-min.md`](notes/20201127-fs711-neurodocker-min.md) for details on how this container was created using neurodocker.
 
 ## Containers for FreeView
 -----------------------------------------------------------------------
