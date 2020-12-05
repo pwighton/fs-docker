@@ -30,7 +30,7 @@ The container [`pwighton/freesurfer:7.1.1-min`](https://hub.docker.com/layers/12
 -----------------------------------------------------------------------
 The best way to run FreeView in a container is via [vnm](https://github.com/NeuroDesk/vnm)
 
-Start vnm:
+Quickstart:
 ```
 mkdir -p ~/vnm
 docker run --privileged \
