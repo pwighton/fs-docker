@@ -47,7 +47,9 @@ Then visit http://localhost:6080/ and install FreeSurfer and Launch FreeView via
 
 ## Containers for Compliling FreeSurfer
 -----------------------------------------------------------------------
-The container `pwighton/fs-dev-build` can be used to compile FreeSurfer from source.  Use `make fs-build` (or `make fs-build-nc` to build without using the cache) to build the container.
+The `fs-dev-build` container  can be used to compile FreeSurfer from source.
+
+Use `make fs-build` (or `make fs-build-nc` to build without using the cache) to build the container. Or pull: `docker pull pwighton/fs-dev-run`.
 
 The [Dockerfile](build/Dockerfile) defines 3 volumes that must be mounted when the container is invoked:
 - `VOLUME /fs-pkg`: The location of FreeSurfer's [pre-compiled binaries](http://surfer.nmr.mgh.harvard.edu/pub/data/fspackages/prebuilt/centos7-packages.tar.gz) (input to compilation)
@@ -141,34 +143,62 @@ Now, type `exit` to exit the container.  Since outside the container, the direct
 ## Containers for Running FreeSurfer
 -----------------------------------------------------------------------
 
-The `freesurfer-run` container is used to run a specifc version of `recon-all` and is based on Ubuntu 16.04.3 LTS (Xenial Xerus).  It is built from the file `run/Dockerfile`
+The `fs-dev-run` container is used to run a specifc version of `recon-all` and is based on Ubuntu 16.04.3 LTS (Xenial Xerus).  It is built from the file `run/Dockerfile`
+
+The container requires a free and easily available FreeSurfer [License](https://surfer.nmr.mgh.harvard.edu/registration.html). 
 
 ### Pre-reqs
 - Install docker
 - Obtain FreeSurfer binaries (either by following the steps above to compile or [download](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall))
 - Obtain FreeSurfer subject data to recon
-- Obtain FreeSurfer license (from [here](https://surfer.nmr.mgh.harvard.edu/registration.html)) 
+- Obtain [FreeSurfer license](https://surfer.nmr.mgh.harvard.edu/registration.html)
 
 #### Setup
 
-##### Build/Tag Container
+Build/Tag Container
 ```
 make fs-run
 ```
 
-##### Get `FS_KEY` value
+or pull:
+```
+docker pull pwighton/fs-dev-run
+```
 
-The [entrypoint script](run/entrypoint.freesurfer-run.bash) for this container looks for the environment variable `FS_KEY` and, if present, will base64-decode the string and store the contents in the file `$FREESURFER_HOME/license.txt`.  Most of FreeSurfer will not work without this license file.  
+##### Managing the FreeSurfer License
 
-Obtaining a license file is free and can be applied for [here](https://surfer.nmr.mgh.harvard.edu/registration.html).  Once you have the license file, run `cat $FREESURFER_HOME/license.txt |base64 -w 0 && echo` to get the string that you should set the `FS_KEY` environment variable to.
+There are two ways to pass the license to the container
+- Via volume mount (`docker run -v`)
+- Via environment varianle (`docker run -v FS_KEY='...'`)
 
-#### Recon a subject
+To mount via volume, locate your license and mount in somewhere in the container:
+```
+  -v ${LICENSE_DIR}/license.txt:/data/license.txt
+```
+
+Set the environment variablle `FS_LICENSE` accordingly:
+```
+  -e FS_LICENSE='/data/license.txt'
+```
+
+The license file can also be passed direcly as a base64 encoded string.  This may result in the license being stored in logs.
+
+Encode `license.txt`:
+```
+cat ./license.txt |base64 -w 999
+```
+
+Set the environment variablle `FS_KEY` accordingly:
+```
+  -e `FS_KEY='cGF1bEBjb3J0aWNvbWV0cmljcy---not-a-real-key---lrR3o2bnNYaGcKIEZTVXQweHY5UmlGcWMK'`
+```
+
+#### Passing in Binaries and Data
 
 The `freesurfer-run` container expects: 
   - 2 volumes to be mounted.
     - The FreeSurfer install directory (`$FREESURFER_HOME`) should be mounted to `/freesurfer-bin` 
     - The FreeSurfer subjects directory (`$SUBJECTS_DIR`) should be mounted to `/subjects`
-  - The `FS_KEY` environment variable is set to the base64-encoded string of the FreeSurfer license file
 
 ##### Example
 
@@ -176,15 +206,27 @@ Suppose:
   - The FreeSurfer install directory lives at `~/fs-development/bin`
   - The FreeSurfer subject directory lives at `/tmp/subjects/`
     - The FreeSurfer subject directory contains the subdirectory `bert`, which you would like to recon
-  - The `FS_KEY` value is `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+  - The `FS_KEY` value is `cGF1bEBjb3J0aWNvbWV0cmljcy---not-a-real-key---lrR3o2bnNYaGcKIEZTVXQweHY5UmlGcWMK`
+  - The FreeSurfer license file is located at `~/license.txt`
 
-Then, the following command will run recon-all on bert:
+Then, either command command will run recon-all on bert:
 ```
 docker run -it --rm \
   -v ${HOME}/fs-development/bin:/freesurfer-bin \
   -v /tmp/subjects/:/subjects \
-  -e FS_KEY='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' \
-  -u ${UID}:${GID} \
+  -e FS_KEY='cGF1bEBjb3J0aWNvbWV0cmljcy---not-a-real-key---lrR3o2bnNYaGcKIEZTVXQweHY5UmlGcWMK' \
+  -u ${UID} \
+  corticometrics/freesurfer-run:latest \
+  recon-all -all -s bert
+```
+or
+```
+docker run -it --rm \
+  -v ${HOME}/fs-development/bin:/freesurfer-bin \
+  -v /tmp/subjects/:/subjects \
+  -v ${HOME}/license.txt:/data/license.txt
+  -e FS_LICENSE='/data/license.txt'
+  -u ${UID} \
   corticometrics/freesurfer-run:latest \
   recon-all -all -s bert
 ```

@@ -56,8 +56,9 @@ ENV MNI_PERL5LIB $FREESURFER_HOME/mni/share/perl5
 ENV FIX_VERTEX_AREA ""
 ENV FSLOUTPUTTYPE NIFTI_GZ
 
-## to supress a `Could not set locale` error when `mri_convert` is run in recon-all
+# To supress a `Could not set locale` error when `mri_convert` is run in recon-all
 ENV FS_DISABLE_LANG 1
 
-## for more POSIX-like behaviour (https://github.com/freesurfer/freesurfer/pull/83) 
-# ENV FS_POSIX 1
+# Just in case
+# https://github.com/freesurfer/freesurfer/issues/776
+ENV FS_TIME_ALLOW 0
