@@ -1,7 +1,5 @@
 # fs-docker
 
-[Building FS7 docker containers with neurodocker](20200507-fs7-neurodocker.md)
-
 Notes on how containers can support:
 - Running Released Versions of FreeSurfer
 - Running FreeView
