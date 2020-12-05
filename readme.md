@@ -51,7 +51,7 @@ The container `pwighton/fs-dev-build` can be used to compile FreeSurfer from sou
 
 The [Dockerfile](build/Dockerfile) defines 3 volumes that must be mounted when the container is invoked:
 - `VOLUME /fs-pkg`: The location of FreeSurfer's [pre-compiled binaries](http://surfer.nmr.mgh.harvard.edu/pub/data/fspackages/prebuilt/centos7-packages.tar.gz) (input to compilation)
-- `VOLUME /fs-code`: The [source code for FreeSurfer](github.com/freesurfer/freesurfer)
+- `VOLUME /fs-code`: The [source code for FreeSurfer](github.com/freesurfer/freesurfer) (input to compilation)
 - `VOLUME /fs-bin`: The location of the FreeSurfer binaries (output of compilation)
 
 ### Example
@@ -73,7 +73,7 @@ export FS_BIN=~/fs-dev/bin
 
 #### Setup Dir structure
 
-and check out `dev` branch of freesurfer
+Get pre-compiled binaries and check out `dev` branch of freesurfer
 ```
 mkdir -p ${FS_PKG}
 mkdir -p ${FS_CODE}
@@ -86,6 +86,7 @@ git clone https://github.com/freesurfer/freesurfer.git ${FS_CODE} && cd ${FS_COD
 
 You can compile FreeSurfer now, but if you want to install/run it, some additional files are needed:
 ```
+cd ${FS_CODE}
 git remote add datasrc https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/repo/annex.git
 git fetch datasrc
 git annex enableremote datasrc
