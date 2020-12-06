@@ -195,7 +195,7 @@ Set the environment variablle `FS_KEY` accordingly:
 
 #### Passing in Binaries and Data
 
-The `freesurfer-run` container expects: 
+The `fs-dev-run` container expects: 
   - 2 volumes to be mounted.
     - The FreeSurfer install directory (`$FREESURFER_HOME`) should be mounted to `/freesurfer-bin` 
     - The FreeSurfer subjects directory (`$SUBJECTS_DIR`) should be mounted to `/subjects`
@@ -216,8 +216,8 @@ docker run -it --rm \
   -v /tmp/subjects/:/subjects \
   -e FS_KEY='cGF1bEBjb3J0aWNvbWV0cmljcy---not-a-real-key---lrR3o2bnNYaGcKIEZTVXQweHY5UmlGcWMK' \
   -u ${UID} \
-  corticometrics/freesurfer-run:latest \
-  recon-all -all -s bert
+  pwighton/fs-dev-run:latest \
+    recon-all -all -s bert
 ```
 or
 ```
@@ -227,6 +227,6 @@ docker run -it --rm \
   -v ${HOME}/license.txt:/data/license.txt
   -e FS_LICENSE='/data/license.txt'
   -u ${UID} \
-  corticometrics/freesurfer-run:latest \
-  recon-all -all -s bert
+  pwighton/fs-dev-run:latest \
+    recon-all -all -s bert
 ```
