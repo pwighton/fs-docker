@@ -1,5 +1,5 @@
 ## This is a copy of run/Dockerfile, but it inherits from pwighton/fs-baby-base
-## for FSL and MINC
+## for FSL
 ##-------------------------------------------------
 # FROM neurodebian:xenial
 FROM pwighton/fs-baby-base
@@ -37,23 +37,19 @@ ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 ENV OS Linux
 ENV FREESURFER $FREESURFER_HOME
 ENV FS_OVERRIDE 0
+ENV PERL5LIB $FREESURFER_HOME/mni/share/perl5
 ENV LOCAL_DIR $FREESURFER_HOME/local
 ENV FSFAST_HOME $FREESURFER_HOME/fsfast
 ENV FMRI_ANALYSIS_DIR $FREESURFER_HOME/fsfast
 ENV FSF_OUTPUT_FORMAT nii.gz
+ENV MINC_BIN_DIR $FREESURFER_HOME/mni/bin
 ENV FUNCTIONALS_DIR $FREESURFER_HOME/sessions
+ENV MINC_LIB_DIR $FREESURFER_HOME/mni/lib
+ENV MNI_DIR $FREESURFER_HOME/mni
+ENV MNI_DATAPATH $FREESURFER_HOME/mni/data
+ENV MNI_PERL5LIB $FREESURFER_HOME/mni/share/perl5
 ENV FIX_VERTEX_AREA ""
 ENV FSLOUTPUTTYPE NIFTI_GZ
-
-ENV MINC_BIN_DIR /opt/minc-1.9.15/bin
-ENV PATH $MINC_BIN_DIR:$PATH
-ENV MINC_LIB_DIR /opt/minc-1.9.15/lib
-ENV MNI_DIR /opt/minc-1.9.15
-ENV PERL5LIB /opt/minc-1.9.15/perl
-ENV MNI_PERL5LIB /opt/minc-1.9.15/perl
-
-# ???
-ENV MNI_DATAPATH $FREESURFER_HOME/mni/data
 
 # To supress a `Could not set locale` error when `mri_convert` is run in recon-all
 ENV FS_DISABLE_LANG 1
@@ -61,3 +57,8 @@ ENV FS_DISABLE_LANG 1
 # Just in case
 # https://github.com/freesurfer/freesurfer/issues/776
 ENV FS_TIME_ALLOW 0
+
+# To get nu_correct in the PATH (fs-pkg needs to be vol mounted for now)
+ENV PATH /fs-pkg/mni/current/bin:$PATH
+
+
