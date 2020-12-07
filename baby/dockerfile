@@ -28,10 +28,11 @@ ENV PATH $FREESURFER_HOME/bin:$PATH
 VOLUME /fs-sub
 ENV SUBJECTS_DIR /fs-sub
 
+# todo: make work with neurodocker
 # Add entrypoint script for licence key management
-ADD entrypoint.freesurfer-run.bash /usr/local/bin/entrypoint.bash
-RUN chmod +rx /usr/local/bin/entrypoint.bash
-ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
+# ADD entrypoint.freesurfer-run.bash /usr/local/bin/entrypoint.bash
+# RUN chmod +rx /usr/local/bin/entrypoint.bash
+# ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 
 # ENV vals from https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/infant/Dockerfile
 ENV OS Linux
@@ -61,4 +62,7 @@ ENV FS_TIME_ALLOW 0
 # To get nu_correct in the PATH (fs-pkg needs to be vol mounted for now)
 ENV PATH /fs-pkg/mni/current/bin:$PATH
 
-
+# To supress the error:
+#  `error: fspython has not been configured correctly - $FREESURFER_HOME/python/bin/python3 does not exist`
+CMD rm -f $FREESURFER_HOME/python/bin/python3 && \
+    ln -s `which python` $FREESURFER_HOME/python/bin/python3
