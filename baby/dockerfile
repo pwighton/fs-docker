@@ -28,6 +28,10 @@ ENV PATH $FREESURFER_HOME/bin:$PATH
 VOLUME /fs-sub
 ENV SUBJECTS_DIR /fs-sub
 
+# Mount point for $FS_INFANT_MODEL
+VOLUME /fs-infant-model
+ENV FS_INFANT_MODEL /fs-infant-model
+
 # todo: make work with neurodocker
 # Add entrypoint script for licence key management
 # ADD entrypoint.freesurfer-run.bash /usr/local/bin/entrypoint.bash
@@ -66,3 +70,31 @@ ENV PATH /fs-pkg/mni/current/bin:$PATH
 #  `error: fspython has not been configured correctly - $FREESURFER_HOME/python/bin/python3 does not exist`
 CMD rm -f $FREESURFER_HOME/python/bin/python3 && \
     ln -s `which python` $FREESURFER_HOME/python/bin/python3
+    
+# MODEL CONFIG
+# -------------------------------------------------------
+
+# Skull stripping model files
+# The code will look for models at `$FREESURFER_HOME/average/sscnn_skullstripping`
+# And they are located inside our infant model at `$FS_INFANT_MODEL/sscnn_skullstrip`
+CMD \
+  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/cor_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/cor_sscnn.h5 && \
+  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/ax_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/ax_sscnn.h5 && \
+  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/sag_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/sag_sscnn.h5 
+
+# Env vars set in 
+# `freesurfer/average/CNYBCH/README` in 
+# `https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/infant/freesurfer-linux-centos7_x86_64-infant.tar.gz`
+ENV CNYBCH_TEMPLATE_SUBJECTS_DIR $FS_INFANT_MODEL/CNYBCH
+ENV CNYBCH_SUBJECTS "Template1 Template2 Template3 Template4 Template5 Template6 Template7 Template8 Template9 Template10 Template11 Template12 Template13 Template14 Template15 Template16 Template17 Template18 Template19 Template20 Template21 Template22 Template23 Template24 Template25 Template26"
+# age at MRI scan (mo)
+ENV CNYBCH_AGES "9 7 6 5 18 12 0 0 3 8 10 10 18 4 2 14 3 16 0 12 0 15 5 17 16 0"
+ENV CNYBCH_GMWM_SUBJECTS "Template5 Template6 Template8 Template10 Template13 Template18 Template20 Template22"
+# mo
+ENV CNYBCH_GMWM_AGES "18 12 0 8 18 16 12 15"
+ENV CNYBCH_NEONATES "Template7 Template8 Template19 Template21 Template26"
+# days (first two computed from weeks)
+ENV CNYBCH_NEONATEAGES "3 4 1 2 4"
+ENV CNYBCH_AROUNDONE "Template11 Template12 Template6 Template20 Template16"
+#mo
+ENV CNYBCH_AROUNDONEAGES "10 10 12 12 14"
