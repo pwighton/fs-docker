@@ -4,6 +4,8 @@
 # FROM neurodebian:xenial
 FROM pwighton/fs-baby-base
 
+USER root
+
 RUN apt-get update && \
     apt-get install -y \
       bc \
@@ -18,6 +20,25 @@ RUN apt-get update && \
       unzip \
       uuid-dev \
       vim-common
+
+
+COPY requirements.txt /tmp/requirements.txt
+
+# To force the activation of the freesurfer conda env created via neurodocker,
+# for the following pip commands
+ENV CONDA_DEFAULT_ENV=freesurfer
+ENV CONDA_PROMPT_MODIFIER=(freesurfer) 
+ENV PATH=/opt/miniconda-latest/envs/freesurfer/bin:/opt/miniconda-latest/condabin:$PATH
+ENV CONDA_PREFIX=/opt/miniconda-latest/envs/freesurfer
+
+# To get an ancient version of tensroflow
+#RUN pip install --ignore-installed --upgrade \
+#      https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_cpu-1.5.0-cp365-cp365m-linux_x86_64.whl
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/requirements.txt 
+    
+    #&& \
+    #pip install tensorflow_cpu==1.5.0
 
 # Mount point for FreeSurfer binaries (result of compilation)
 VOLUME /fs-bin

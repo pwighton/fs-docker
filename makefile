@@ -36,13 +36,15 @@ fs-baby-base-dockerfile:
 	      method=binaries \
 	    --miniconda \
 	      create_env=freesurfer \
-	      conda_install="python=3.6.5 numpy==1.16.* scipy" \
-	      pip_install="nibabel six pyyaml scikit-image tables keras==2.3.* tensorflow==2.4.* sklearn" \
+	      conda_install="python=3.6.5" \
 	      activate=true \
 	> baby/dockerfile.fs-baby-base
-
+	
 fs-baby-base: fs-baby-base-dockerfile
 	cd ./baby && docker build -t pwighton/fs-baby-base -f dockerfile.fs-baby-base .
 	
 fs-baby-base-nc: fs-baby-base-dockerfile
 	cd ./baby && docker build --no-cache -t pwighton/fs-baby-base -f dockerfile.fs-baby-base .
+	
+	
+	
