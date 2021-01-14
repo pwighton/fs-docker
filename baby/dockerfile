@@ -1,7 +1,5 @@
-## This is a copy of run/Dockerfile, but it inherits from pwighton/fs-baby-base
-## for FSL
-##-------------------------------------------------
-# FROM neurodebian:xenial
+# Neurodocker generated image used to install FSL, python, etc
+# See make target "fs-baby-base-dockerfile"
 FROM pwighton/fs-baby-base
 
 USER root
@@ -21,25 +19,17 @@ RUN apt-get update && \
       uuid-dev \
       vim-common
 
-
-COPY requirements.txt /tmp/requirements.txt
-
 # To force the activation of the freesurfer conda env created via neurodocker,
-# for the following pip commands
+# for the subsequent pip install commands
 ENV CONDA_DEFAULT_ENV=freesurfer
 ENV CONDA_PROMPT_MODIFIER=(freesurfer) 
 ENV PATH=/opt/miniconda-latest/envs/freesurfer/bin:/opt/miniconda-latest/condabin:$PATH
 ENV CONDA_PREFIX=/opt/miniconda-latest/envs/freesurfer
 
-# To get an ancient version of tensroflow
-#RUN pip install --ignore-installed --upgrade \
-#      https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_cpu-1.5.0-cp365-cp365m-linux_x86_64.whl
+COPY requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r /tmp/requirements.txt 
     
-    #&& \
-    #pip install tensorflow_cpu==1.5.0
-
 # Mount point for FreeSurfer binaries (result of compilation)
 VOLUME /fs-bin
 ENV FREESURFER_HOME=/fs-bin
@@ -52,12 +42,6 @@ ENV SUBJECTS_DIR /fs-sub
 # Mount point for $FS_INFANT_MODEL
 VOLUME /fs-infant-model
 ENV FS_INFANT_MODEL /fs-infant-model
-
-# todo: make work with neurodocker
-# Add entrypoint script for licence key management
-# ADD entrypoint.freesurfer-run.bash /usr/local/bin/entrypoint.bash
-# RUN chmod +rx /usr/local/bin/entrypoint.bash
-# ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
 
 # ENV vals from https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/infant/Dockerfile
 ENV OS Linux
@@ -89,8 +73,9 @@ ENV PATH /fs-pkg/mni/current/bin:$PATH
 
 # To supress the error:
 #  `error: fspython has not been configured correctly - $FREESURFER_HOME/python/bin/python3 does not exist`
-CMD rm -f $FREESURFER_HOME/python/bin/python3 && \
-    ln -s `which python` $FREESURFER_HOME/python/bin/python3
+# PW 2021/01/14: Shuld be done with container inits, since /fs-bin doesn't exist until mounted
+#RUN rm -f $FREESURFER_HOME/python/bin/python3 && \
+#    ln -s `which python` $FREESURFER_HOME/python/bin/python3
     
 # MODEL CONFIG
 # -------------------------------------------------------
@@ -98,10 +83,11 @@ CMD rm -f $FREESURFER_HOME/python/bin/python3 && \
 # Skull stripping model files
 # The code will look for models at `$FREESURFER_HOME/average/sscnn_skullstripping`
 # And they are located inside our infant model at `$FS_INFANT_MODEL/sscnn_skullstrip`
-CMD \
-  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/cor_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/cor_sscnn.h5 && \
-  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/ax_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/ax_sscnn.h5 && \
-  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/sag_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/sag_sscnn.h5 
+# PW 2021/01/14: Shuld be done with container inits, since /fs-bin doesn't exist until mounted
+#RUN \
+#  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/cor_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/cor_sscnn.h5 && \
+#  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/ax_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/ax_sscnn.h5 && \
+#  ln -s $FS_INFANT_MODEL/sscnn_skullstrip/sag_sscnn.h5 $FREESURFER_HOME/average/sscnn_skullstripping/sag_sscnn.h5 
 
 # Env vars set in 
 # `freesurfer/average/CNYBCH/README` in 
@@ -119,3 +105,8 @@ ENV CNYBCH_NEONATEAGES "3 4 1 2 4"
 ENV CNYBCH_AROUNDONE "Template11 Template12 Template6 Template20 Template16"
 #mo
 ENV CNYBCH_AROUNDONEAGES "10 10 12 12 14"
+
+# Add entrypoint script for licence key management and runtime config
+ADD entrypoint.freesurfer-run.bash /usr/local/bin/entrypoint.bash
+RUN chmod +rx /usr/local/bin/entrypoint.bash
+ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
