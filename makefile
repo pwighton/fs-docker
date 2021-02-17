@@ -45,6 +45,3 @@ fs-baby-base: fs-baby-base-dockerfile
 	
 fs-baby-base-nc: fs-baby-base-dockerfile
 	cd ./baby && docker build --no-cache -t pwighton/fs-baby-base -f dockerfile.fs-baby-base .
-	
-	
-	
