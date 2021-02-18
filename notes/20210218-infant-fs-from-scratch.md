@@ -5,7 +5,7 @@
 1) Build the container to compile FreeSurfer and NiftiReg
 2) Compile FreeSurfer
 3) Compile NiftyReg
-4) Build the containe to reun the Infant pipeline
+4) Build the container to run the Infant pipeline
 5) Find an Infant Model
 6) Find a Subject
 7) Run the pipeline
@@ -15,10 +15,10 @@
 - Git (tested with 2.17.1)
 - Git annex (tested with 6.20180227)
 - Docker (tested with version 19.03.12, build 48a66213fe)
-- wget
-- A FreeSurfer lisence file
+- `wget` and `tar`
+- A [FreeSurfer License file](https://surfer.nmr.mgh.harvard.edu/fswiki/License)
 - An internet connection
-- XYZ free hard drive space
+- XYZ free hard drive space (todo)
 
 ## Setup
 
@@ -48,7 +48,7 @@ export NR_CODE=/home/ubuntu/environment/baby2/niftyreg-git
 export NR_BIN=/home/ubuntu/environment/baby2/niftyreg-bin
 ```
 
-Define build params for this specific build:
+Define the build params for this specific build:
 - `FS_GIT_REMOTE`: The git remote to use to fetch FreeSurfer's source code
 - `FS_GIT_ID`:  The git commitID or branch name to use with FreeSurfer's git repo 
 - `FS_GIT_ANNEX_REMOTE`: The remote of FreeSurfer's git annex repo
@@ -131,6 +131,11 @@ The container `pwighton/fs-dev-build` is used to compile the FreeSurfer and Nift
 cd $FS_DOCKER
 make fs-build-nc
 ```
+
+The container defines mount points for:
+- `/fs-code`: Location of FreeSurfer source code (input)
+- `/fs-pkg`: Location of FreeSurfer pre-compiled binaries (input)
+- `/fs-bin`: Location to store compiled binaries (output)
 
 ## Compile FreeSurfer
 
@@ -232,14 +237,14 @@ make fs-baby-nc
 The container consists of:
   - A neurodocker base container that installs FSL and python
   - Mount points for:
-    - fs-bin
-    - nr-bin (pw: adding niftyreg support to neurodocker would simplify our build.. todo)
-    - fs-pkg (pw: this is only needed for one file.. todo)
-    - fs-sub
-    - fs-infant-model
-  - A entrypoint script
-    - license managment (todo)
-    - model management (todo)
+    - `/fs-bin`: FreeSurfer binaries (compiled above)
+    - `/nr-bin`: NiftyReg binaries (compiled above) (pw: adding niftyreg support to neurodocker would simplify our build.. todo)
+    - `/fs-pkg`: FreeSurfer pre-compiled packages (pw: this is only needed for one file.. todo)
+    - `/fs-sub`: FreeSurfer's subject directory
+    - `/fs-infant-model`: The infant model (todo define)
+  - An entrypoint script, that:
+    - Manages the FreeSurfer license (todo)
+    - Manages the setup of the infant model (todo)
 
 ## Invoke the container and run the infant pipeline
 
