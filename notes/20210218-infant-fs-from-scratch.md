@@ -199,10 +199,10 @@ docker run -it --rm \
   -u ${UID}:${GID} \
   pwighton/fs-dev-build:latest \
     cmake \
-    -DCMAKE_INSTALL_PREFIX="/nr-bin" \
-    -DCMAKE_BUILD_TYPE="Release" \
-    -DUSE_SSE="OFF" \
-    -DUSE_DOUBLE="ON" \
+      -DCMAKE_INSTALL_PREFIX="/nr-bin" \
+      -DCMAKE_BUILD_TYPE="Release" \
+      -DUSE_SSE="OFF" \
+      -DUSE_DOUBLE="ON" \
         /nr-code
 ```
 
