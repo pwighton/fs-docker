@@ -18,7 +18,7 @@
 - `wget` and `tar`
 - A [FreeSurfer License file](https://surfer.nmr.mgh.harvard.edu/fswiki/License)
 - An internet connection
-- XYZ free hard drive space (todo)
+- ~70Gb free hard drive space
 
 ## Setup
 
