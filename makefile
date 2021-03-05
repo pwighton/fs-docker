@@ -23,6 +23,7 @@ fs-baby-nd:
 	    --base-image ubuntu:xenial \
 	    --pkg-manager apt \
 	    --yes \
+	    --entrypoint /tmp/freesurfer/freesurfer-20210115-fs-baby/infant/entrypoint.bash \
 	    --niftyreg \
 	      version=master \
 	    --fsl \
@@ -33,8 +34,7 @@ fs-baby-nd:
 	      method=source \
 	      repo=https://github.com/pwighton/freesurfer.git \
 	      version=20210115-fs-baby \
-	      infant_module=ON \
-	    --entrypoint /tmp/freesurfer/freesurfer-20210115-fs-baby/infant/entrypoint.bash | \
+	      infant_module=ON | \
 	docker build -t pwighton/fs-infant-dev -
 
 
