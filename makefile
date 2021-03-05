@@ -23,7 +23,7 @@ fs-baby-nd:
 	    --base-image ubuntu:xenial \
 	    --pkg-manager apt \
 	    --yes \
-	    --entrypoint /tmp/freesurfer/freesurfer-20210115-fs-baby/infant/entrypoint.bash \
+	    --entrypoint /tmp/freesurfer/freesurfer-20210115-fs-baby/infant/docker/entrypoint.bash \
 	    --niftyreg \
 	      version=master \
 	    --fsl \
