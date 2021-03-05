@@ -1,3 +1,7 @@
+FS_LICENSE_BASE64 ?= ""
+FS_REPO ?= "https://github.com/freesurfer/freesurfer"
+FS_BRANCH ?= "dev"
+
 all: fs-build
 #all: fs-build fs-run
 
@@ -12,6 +16,27 @@ fs-run:
 
 fs-run-nc:
 	cd ./run && docker build --no-cache -t pwighton/fs-dev-run .
+
+# via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
+fs-baby-nd:
+	neurodocker generate docker \
+	    --base-image ubuntu:xenial \
+	    --pkg-manager apt \
+	    --yes \
+	    --niftyreg \
+	      version=master \
+	    --fsl \
+	      version=5.0.10 \
+	      method=binaries \
+	    --freesurfer \
+	      license_base64=${FS_LICENSE_BASE64} \
+	      method=source \
+	      repo=https://github.com/pwighton/freesurfer.git \
+	      version=20210115-fs-baby \
+	      infant_module=ON \
+	    --entrypoint /tmp/freesurfer/freesurfer-20210115-fs-baby/infant/entrypoint.bash | \
+	docker build -t pwighton/fs-infant-dev -
+
 
 fs-baby: fs-baby-base
 	cd ./baby && docker build -t pwighton/fs-baby .
