@@ -15,24 +15,13 @@ phases:
     commands:
       - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
       - export FS_LICENSE=$FS_LICENSE_PARAM
-      - docker login --username pwighton --password $DOCKERHUB_PASS      
-      - git clone https://github.com/pwighton/neurodocker.git
-      - cd neurodocker
-      - git checkout 20210226-fs-source
-      - conda create -n nd-dev python=3.6.6
-      - conda activate nd-dev
-      - python -m pip install --no-cache-dir --editable .[all]
-    #finally:
-    #  - command
-  #pre_build:
-    #run-as: Linux-user-name
-    #on-failure: ABORT
-    #commands:
-    #finally:
-
+      - docker login --username pwighton --password $DOCKERHUB_PASS
   build:
     #run-as: Linux-user-name
     on-failure: ABORT
     commands:
-      - neurodocker generate docker --base-image ubuntu:xenial --pkg-manager apt --yes --freesurfer license_base64=cGF1bEBjb3J0aWNvbWV0cmljcy5jb20KMzA0NDQKICpDZ3lrR3o2bnNYaGcKIEZTVXQweHY5UmlGcWMK method=source repo=https://github.com/pwighton/freesurfer.git version=dev minimal=off infant_module=on install_python_deps=on distribute_fspython=on | docker build --no-cache -t pwighton/fs-dev-monolith -
-
+      - docker run pwighton/neurodocker:latest generate docker --base-image ubuntu:xenial --pkg-manager apt --yes --freesurfer license_base64=$FS_LICENSE method=source repo=https://github.com/pwighton/freesurfer.git version=dev minimal=off infant_module=on install_python_deps=on distribute_fspython=on | docker build --no-cache -t pwighton/fs-dev-monolith -
+  post_build:
+    on-failure: ABORT
+    commands:
+      - docker push pwighton/fs-dev-monolith:latest
