@@ -28,6 +28,6 @@ phases:
       - make fs-build
 
   post_build:
-    on-failure: ABORT | CONTINUE
+    on-failure: ABORT
     commands:
       - docker push pwighton/fs-dev-build:latest
