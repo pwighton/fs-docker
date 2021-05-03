@@ -1,0 +1,72 @@
+# see https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
+version: 0.2
+
+
+# `run-as:`: Optional sequence. Available to Linux users only. Specifies a Linux user that runs commands in this buildspec file. run-as grants the specified user read and run permissions. When you specify run-as at the top of the buildspec file, it applies globally to all commands. If you don't want to specify a user for all buildspec file commands, you can specify one for commands in a phase by using run-as in one of the phases blocks. If run-as is not specified, then all commands run as the root user.
+# run-as: root
+
+# `env:`: Optional sequence. Represents information for one or more custom environment variables.
+env:
+  # `env/shell`: Optional sequence. Specifies the supported shell for Linux or Windows operating systems.  For Linux, supported shell tags are:
+  #   - bash
+  #   - /bin/sh
+  shell: bash
+
+  # `env/variables`: Required if env is specified, and you want to define custom environment variables in plain text. Contains a mapping of key/value scalars, where each mapping represents a single custom environment variable in plain text
+  #variables:
+  #  key: "value"
+  #  key: "value"
+  #parameter-store:
+  #  key: "value"
+  #  key: "value"
+  #exported-variables:
+  #  - variable
+  #  - variable
+  #secrets-manager:
+  #  key: secret-id:json-key:version-stage:version-id
+  #git-credential-helper: no | yes
+
+#batch:
+  #fast-fail: false | true
+  # build-list:
+  # build-matrix:
+  # build-graph:
+        
+phases:
+  #install:
+    #run-as: Linux-user-name
+    #on-failure: ABORT
+    #commands:
+    #  - 
+    #finally:
+    #  - command
+  #pre_build:
+    #run-as: Linux-user-name
+    #on-failure: ABORT
+    #commands:
+    #finally:
+
+  build:
+    #run-as: Linux-user-name
+    on-failure: ABORT
+    commands:
+      - make build
+
+#  post_build:
+#    run-as: Linux-user-name
+#    on-failure: ABORT | CONTINUE
+#    commands:
+#      - command
+#      - command
+#    finally:
+#      - command
+#      - command
+#reports:
+#  report-group-name-or-arn:
+#    files:
+#      - location
+#      - location
+#    base-directory: location
+#    discard-paths: no | yes
+#    file-format: report-format
+
