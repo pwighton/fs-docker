@@ -62,10 +62,10 @@ RUN curl -sSL --retry 5 https://cmake.org/files/v3.12/cmake-3.12.3.tar.gz | tar 
     cd cmake-3.12.3 && ./configure && make && make install && cd - && \
     rm -rf cmake-3.12.3
 
-# Install Python 3.6, update pip and wheel
-RUN curl -sSL --retry 5 https://www.python.org/ftp/python/3.6.5/Python-3.6.5.tgz | tar -xz && \
-    cd Python-3.6.5 && ./configure && make -j && make install && cd - && \
-    rm -rf Python-3.6.5 Python-3.6.5.tgz 
+# Install Python 3.6.6, update pip and wheel
+RUN curl -sSL --retry 5 https://www.python.org/ftp/python/3.6.6/Python-3.6.6.tgz | tar -xz && \
+    cd Python-3.6.6 && ./configure && make -j && make install && cd - && \
+    rm -rf Python-3.6.6 Python-3.6.6.tgz 
 RUN pip3 install -q --no-cache-dir -U pip && \
     pip3 install -q --no-cache-dir wheel && \
     sync
