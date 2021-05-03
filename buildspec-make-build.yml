@@ -50,7 +50,7 @@ phases:
     #run-as: Linux-user-name
     on-failure: ABORT
     commands:
-      - make build
+      - make fs-build
 
 #  post_build:
 #    run-as: Linux-user-name
