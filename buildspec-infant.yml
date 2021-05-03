@@ -18,7 +18,7 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - ND="docker run -it --rm pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
+      - ND="docker run pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
   post_build:
     on-failure: ABORT
     commands:
