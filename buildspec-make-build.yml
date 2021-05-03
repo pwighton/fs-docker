@@ -11,62 +11,20 @@ env:
   #   - bash
   #   - /bin/sh
   shell: bash
+  parameter-store:
+    DOCKERHUB_PASS_PARAM: /dockerhub-access-token-for-pwighton
 
-  # `env/variables`: Required if env is specified, and you want to define custom environment variables in plain text. Contains a mapping of key/value scalars, where each mapping represents a single custom environment variable in plain text
-  #variables:
-  #  key: "value"
-  #  key: "value"
-  #parameter-store:
-  #  key: "value"
-  #  key: "value"
-  #exported-variables:
-  #  - variable
-  #  - variable
-  #secrets-manager:
-  #  key: secret-id:json-key:version-stage:version-id
-  #git-credential-helper: no | yes
-
-#batch:
-  #fast-fail: false | true
-  # build-list:
-  # build-matrix:
-  # build-graph:
-        
 phases:
-  #install:
-    #run-as: Linux-user-name
-    #on-failure: ABORT
-    #commands:
-    #  - 
-    #finally:
-    #  - command
-  #pre_build:
-    #run-as: Linux-user-name
-    #on-failure: ABORT
-    #commands:
-    #finally:
+  install:
+    - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
+    - docker login --username pwighton --password $DOCKERHUB_PASSWD
 
   build:
-    #run-as: Linux-user-name
     on-failure: ABORT
     commands:
       - make fs-build
 
-#  post_build:
-#    run-as: Linux-user-name
-#    on-failure: ABORT | CONTINUE
-#    commands:
-#      - command
-#      - command
-#    finally:
-#      - command
-#      - command
-#reports:
-#  report-group-name-or-arn:
-#    files:
-#      - location
-#      - location
-#    base-directory: location
-#    discard-paths: no | yes
-#    file-format: report-format
-
+  post_build:
+    on-failure: ABORT | CONTINUE
+    commands:
+      - docker push pwighton/fs-dev-build:latest
