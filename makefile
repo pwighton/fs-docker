@@ -1,6 +1,7 @@
 FS_LICENSE_BASE64 ?= ""
 FS_REPO ?= "https://github.com/freesurfer/freesurfer"
 FS_BRANCH ?= "dev"
+ND ?= "neuroocker"
 
 all: fs-build
 #all: fs-build fs-run
@@ -18,8 +19,8 @@ fs-run-nc:
 	cd ./run && docker build --no-cache -t pwighton/fs-dev-run .
 
 # via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
-fs-baby-nd:
-	neurodocker generate docker \
+fs-infant-dev:
+	${ND} generate docker \
 	    --base-image ubuntu:xenial \
 	    --pkg-manager apt \
 	    --yes \

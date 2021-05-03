@@ -18,8 +18,8 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - docker run pwighton/neurodocker:latest generate docker --base-image ubuntu:xenial --pkg-manager apt --yes --freesurfer license_base64=$FS_LICENSE method=source repo=https://github.com/pwighton/freesurfer.git version=dev minimal=off infant_module=on install_python_deps=on distribute_fspython=on | docker build --no-cache -t pwighton/fs-dev-monolith -
+      - ND="docker run -it --rm pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
   post_build:
     on-failure: ABORT
     commands:
-      - docker push pwighton/fs-dev-monolith:latest
+      - docker push pwighton/fs-infant-dev:latest
