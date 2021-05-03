@@ -61,7 +61,7 @@ fs-baby-base-dockerfile:
 	      method=binaries \
 	    --miniconda \
 	      create_env=freesurfer \
-	      conda_install="python=3.6.5" \
+	      conda_install="python=3.6.6" \
 	      activate=true \
 	> baby/dockerfile.fs-baby-base
 	
