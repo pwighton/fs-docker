@@ -18,7 +18,7 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - docker run pwighton/neurodocker:latest generate docker --base-image ubuntu:xenial --pkg-manager apt --yes --freesurfer license_base64=$FS_LICENSE method=source repo=https://github.com/pwighton/freesurfer.git version=dev minimal=off infant_module=on install_python_deps=on distribute_fspython=on | docker build --no-cache -t pwighton/fs-dev-monolith -
+      - docker run pwighton/neurodocker:latest generate docker --base-image ubuntu:xenial --pkg-manager apt --yes --freesurfer license_base64=$FS_LICENSE method=source repo=https://github.com/freesurfer/freesurfer.git version=dev minimal=off infant_module=on install_python_deps=on distribute_fspython=on | docker build --no-cache -t pwighton/fs-dev-monolith -
   post_build:
     on-failure: ABORT
     commands:
