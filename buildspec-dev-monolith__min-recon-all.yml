@@ -20,6 +20,7 @@ phases:
     on-failure: ABORT
     commands:
       - docker run hello-world
+      - docker tag hello-world 701847355435.dkr.ecr.us-east-2.amazonaws.com/test
   post_build:
     on-failure: ABORT
     commands:
