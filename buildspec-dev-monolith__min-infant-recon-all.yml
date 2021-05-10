@@ -15,7 +15,7 @@ phases:
       - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
       - export FS_LICENSE=$FS_LICENSE_PARAM
       - docker login --username pwighton --password $DOCKERHUB_PASS
-      - docker pull hello-world
+      - `aws ecr get-login --no-include-email`
   build:
     on-failure: ABORT
     commands:
