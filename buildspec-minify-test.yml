@@ -1,0 +1,29 @@
+# see https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
+version: 0.2
+
+env:
+  shell: bash
+  # https://stackoverflow.com/questions/58216549/how-to-retrieve-secret-manager-data-in-buildspec-yaml
+  parameter-store:
+    DOCKERHUB_PASS_PARAM: /dockerhub-access-token-for-pwighton
+    FS_LICENSE_PARAM: /freesurfer-ci-license
+            
+phases:
+  install:
+    on-failure: ABORT
+    commands:
+      - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
+      - export FS_LICENSE=$FS_LICENSE_PARAM
+      - docker login --username pwighton --password $DOCKERHUB_PASS
+      - pip install neurodocker
+  build:
+    on-failure: ABORT
+    commands:
+      - docker pull library/bash
+  post_build:
+    on-failure: ABORT
+    commands:
+      - docker run --rm -it -d --name container-to-min library/bash
+      - cmd1="echo hello world"
+      - yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" &&
+docker export container-to-min | docker import - pwighton/container-to-min--test
