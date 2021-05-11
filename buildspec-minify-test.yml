@@ -12,10 +12,11 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - docker pull library/bash
+      - docker pull pwighton/fs-infant-dev
   post_build:
     on-failure: ABORT
     commands:
-      - docker run --rm -it -d --name container-to-min library/bash
+      - docker run --rm -it -d --name container-to-min pwighton/fs-infant-dev
       - cmd1="echo hello world"
       - yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" docker export container-to-min | docker import - pwighton/container-to-min--test
+      - docker push pwighton/container-to-min--tes
