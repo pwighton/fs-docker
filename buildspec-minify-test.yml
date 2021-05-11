@@ -3,11 +3,16 @@ version: 0.2
 
 env:
   shell: bash
-            
+  # https://stackoverflow.com/questions/58216549/how-to-retrieve-secret-manager-data-in-buildspec-yaml
+  parameter-store:
+    DOCKERHUB_PASS_PARAM: /dockerhub-access-token-for-pwighton
+                
 phases:
   install:
     on-failure: ABORT
     commands:
+      - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
+      - docker login --username pwighton --password $DOCKERHUB_PASS
       - pip install neurodocker docker
   build:
     on-failure: ABORT
