@@ -17,12 +17,12 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      #- docker pull pwighton/fs-infant-dev
-       - docker pull bash
+      - docker pull pwighton/fs-infant-dev
+      #- docker pull bash
   post_build:
     on-failure: ABORT
     commands:
-      - docker run --security-opt seccomp:unconfined --rm -it -d --name container-to-min bash /bin/bash
+      - docker run --security-opt seccomp:unconfined --rm -it -d --name container-to-min pwighton/fs-infant-dev /bin/bash
       - sleep 1
       - cmd1="echo hello world"
       - yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" docker export container-to-min | docker import - pwighton/container-to-min--test
