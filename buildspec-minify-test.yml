@@ -12,9 +12,6 @@ phases:
   install:
     on-failure: ABORT
     commands:
-      #- export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
-      #- export FS_LICENSE=$FS_LICENSE_PARAM
-      #- docker login --username pwighton --password $DOCKERHUB_PASS
       - pip install neurodocker
   build:
     on-failure: ABORT
