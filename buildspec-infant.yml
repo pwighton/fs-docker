@@ -15,11 +15,12 @@ phases:
       - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
       - export FS_LICENSE=$FS_LICENSE_PARAM
       - docker login --username pwighton --password $DOCKERHUB_PASS
+      # even though we use `pwighton/neurodocker:latest` to create the Dockerfile
+      # we need neurodocker for `neurodocker minify`
+      - pip install neurodocker
   build:
     on-failure: ABORT
     commands:
       - ND="docker run pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
-  post_build:
-    on-failure: ABORT
-    commands:
       - docker push pwighton/fs-infant-dev:latest
+      #- docker pull pwighton/fs-infant-dev:latest

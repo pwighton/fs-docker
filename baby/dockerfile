@@ -48,11 +48,6 @@ ENV SUBJECTS_DIR /fs-sub
 VOLUME /fs-infant-model
 ENV FS_INFANT_MODEL /fs-infant-model
 
-# Mount point for NiftyReg Binaries
-VOLUME /nr-bin
-ENV NR_BIN /nr-bin/bin
-ENV PATH $NR_BIN:$PATH
-
 # From https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/infant/Dockerfile
 # -------------------------------------------------------
 ENV OS Linux
