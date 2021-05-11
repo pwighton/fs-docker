@@ -3,10 +3,6 @@ version: 0.2
 
 env:
   shell: bash
-  # https://stackoverflow.com/questions/58216549/how-to-retrieve-secret-manager-data-in-buildspec-yaml
-  parameter-store:
-    DOCKERHUB_PASS_PARAM: /dockerhub-access-token-for-pwighton
-    FS_LICENSE_PARAM: /freesurfer-ci-license
             
 phases:
   install:
