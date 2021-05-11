@@ -23,6 +23,7 @@ phases:
     on-failure: ABORT
     commands:
       - docker run --security-opt seccomp:unconfined --rm -it -d --name container-to-min bash /bin/bash
+      - sleep 1
       - cmd1="echo hello world"
       - yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" docker export container-to-min | docker import - pwighton/container-to-min--test
       - docker push pwighton/container-to-min--test
