@@ -21,16 +21,6 @@ phases:
       # switch to `repronim/neurodocker:latest`)
       # we need still need neurodocker outside of docker for `neurodocker minify`
       - pip install neurodocker
-  build:
-    on-failure: ABORT
-    commands:
-      #- ND="docker run pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
-      #- docker push pwighton/fs-infant-dev:latest
-      - docker pull pwighton/fs-infant-dev:latest
-  # Minify this beast of a container    
-  post_build:
-    on-failure: ABORT
-    commands:
       # Setup test/minify env
       - export FS_DATAIN=/tmp/run/fs-datain
       - export FS_SUB=/tmp/run/fs-sub
@@ -43,6 +33,17 @@ phases:
       - rm -rf ${FS_SUB}/${SUB}
       - mkdir -p ${FS_SUB}/${SUB}
       - aws s3 cp ${SUB_S3_IN} ${FS_SUB}/${SUB}/mprage.nii.gz
+
+  build:
+    on-failure: ABORT
+    commands:
+      #- ND="docker run pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
+      #- docker push pwighton/fs-infant-dev:latest
+      - docker pull pwighton/fs-infant-dev:latest
+  # Minify this beast of a container    
+  post_build:
+    on-failure: ABORT
+    commands:
       # the minify commands
       - cmd1="infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0"
       # prep for minify
