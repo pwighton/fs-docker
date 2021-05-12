@@ -12,15 +12,6 @@ phases:
   install:
     on-failure: ABORT
     commands:
-      - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
-      - export FS_LICENSE=$FS_LICENSE_PARAM
-      - docker login --username pwighton --password $DOCKERHUB_PASS
-      # even though we use `pwighton/neurodocker:latest` to create the Dockerfile for now
-      # (until https://github.com/pwighton/neurodocker/tree/20210226-fs-source is merged; but that is
-      # based off of, and waiting on https://github.com/ReproNim/neurodocker/pull/378, then we can 
-      # switch to `repronim/neurodocker:latest`)
-      # we need still need neurodocker outside of docker for `neurodocker minify`
-      - pip install neurodocker
       # Setup test/minify env
       - export FS_DATAIN=/tmp/run/fs-datain
       - export FS_SUB=/tmp/run/fs-sub
@@ -33,7 +24,16 @@ phases:
       - rm -rf ${FS_SUB}/${SUB}
       - mkdir -p ${FS_SUB}/${SUB}
       - aws s3 cp ${SUB_S3_IN} ${FS_SUB}/${SUB}/mprage.nii.gz
-
+      ### END Setup test/minify env
+      - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
+      - export FS_LICENSE=$FS_LICENSE_PARAM
+      - docker login --username pwighton --password $DOCKERHUB_PASS
+      # even though we use `pwighton/neurodocker:latest` to create the Dockerfile for now
+      # (until https://github.com/pwighton/neurodocker/tree/20210226-fs-source is merged; but that is
+      # based off of, and waiting on https://github.com/ReproNim/neurodocker/pull/378, then we can 
+      # switch to `repronim/neurodocker:latest`)
+      # we need still need neurodocker outside of docker for `neurodocker minify`
+      - pip install neurodocker
   build:
     on-failure: ABORT
     commands:
