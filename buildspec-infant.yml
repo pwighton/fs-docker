@@ -46,7 +46,7 @@ phases:
       # the minify commands
       - cmd1="infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0"
       # prep for minify
-      - docker run --security-opt seccomp:unconfined --rm -it -d --name container-to-min --entrypoint /bin/bash pwighton/fs-infant-dev:latest
+      - docker run --security-opt seccomp:unconfined -it --rm -d --name container-to-min --entrypoint /bin/bash -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest
       - sleep 1
       # minify
       - yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" 
