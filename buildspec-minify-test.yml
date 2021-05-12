@@ -21,7 +21,7 @@ phases:
   post_build:
     on-failure: ABORT
     commands:
-      - docker run --security-opt seccomp:unconfined --rm -it -d --name container-to-min pwighton/fs-infant-dev /bin/bash
+      - docker run --security-opt seccomp:unconfined --rm -it -d --name container-to-min --entrypoint /bin/bash pwighton/fs-infant-dev
       - sleep 1
       - cmd1="echo hello world"
       - yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" 
