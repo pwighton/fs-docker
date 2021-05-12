@@ -15,12 +15,43 @@ phases:
       - export DOCKERHUB_PASS=$DOCKERHUB_PASS_PARAM
       - export FS_LICENSE=$FS_LICENSE_PARAM
       - docker login --username pwighton --password $DOCKERHUB_PASS
-      # even though we use `pwighton/neurodocker:latest` to create the Dockerfile
-      # we need neurodocker for `neurodocker minify`
+      # even though we use `pwighton/neurodocker:latest` to create the Dockerfile for now
+      # (until https://github.com/pwighton/neurodocker/tree/20210226-fs-source is merged; but that is
+      # based off of, and waiting on https://github.com/ReproNim/neurodocker/pull/378, then we can 
+      # switch to `repronim/neurodocker:latest`)
+      # we need still need neurodocker outside of docker for `neurodocker minify`
       - pip install neurodocker
   build:
     on-failure: ABORT
     commands:
-      - ND="docker run pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
+      #- ND="docker run pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
+      #- docker push pwighton/fs-infant-dev:latest
+      - docker pull pwighton/fs-infant-dev:latest
+  # Minify this beast of a container    
+  post_build:
+    on-failure: ABORT
+    commands:
+      # Setup test/minify env
+      - export FS_DATAIN=/tmp/run/fs-datain
+      - export FS_SUB=/tmp/run/fs-sub
+      - export FS_INFANT_MODEL=/tmp/run/fs-infant-model
+      - export SUB=sub-CC00656XX13-ses-217601
+      - export SUB_S3_IN=s3://fs-infant/test/smoke/sub-CC00656XX13_ses-217601_desc-restore_space-T2w_T1w.nii.gz
+      - mkdir -p ${FS_DATAIN}
+      - mkdir -p ${FS_SUB}
+      - mkdir -p ${FS_INFANT_MODEL}
+      - rm -rf ${FS_SUB}/${SUB}
+      - mkdir -p ${FS_SUB}/${SUB}
+      - aws s3 cp ${SUB_S3_IN} ${FS_SUB}/${SUB}/mprage.nii.gz
+      # the minify commands
+      - cmd1="infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0"
+      # prep for minify
+      - docker run --security-opt seccomp:unconfined --rm -it -d --name container-to-min --entrypoint /bin/bash pwighton/fs-infant-dev:latest
+      - sleep 1
+      # minify
+      - yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" 
+      # export minified container
+      - docker export container-to-min | docker import - pwighton/fs-infant-dev:min
+      # push containers, if all went well
       - docker push pwighton/fs-infant-dev:latest
-      #- docker pull pwighton/fs-infant-dev:latest
+      - docker push pwighton/fs-infant-dev:min
