@@ -13,6 +13,7 @@ phases:
     on-failure: ABORT
     commands:
       # Setup test/minify env
+      - aws configure set region 'us-east-2'
       - export FS_DATAIN=/tmp/run/fs-datain
       - export FS_SUB=/tmp/run/fs-sub
       - export FS_INFANT_MODEL=/tmp/run/fs-infant-model
