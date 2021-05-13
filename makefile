@@ -19,12 +19,15 @@ fs-run-nc:
 	cd ./run && docker build --no-cache -t pwighton/fs-dev-run .
 
 # via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
+# Note, for now make sure the `--entrypoint` dir and version strings match, e.g:
+#    - `--entrypoint /tmp/freesurfer/freesurfer-20210513-fs-infant-dev-merge/infant/docker/entrypoint.bash`
+#    - matches the branch: `20210513-fs-infant-dev-merge`
 fs-infant-dev:
 	${ND} generate docker \
 	    --base-image ubuntu:xenial \
 	    --pkg-manager apt \
 	    --yes \
-	    --entrypoint /tmp/freesurfer/freesurfer-20210115-fs-baby/infant/docker/entrypoint.bash \
+	    --entrypoint /tmp/freesurfer/freesurfer-20210513-fs-infant-dev-merge/infant/docker/entrypoint.bash \
 	    --niftyreg \
 	      version=master \
 	    --fsl \
