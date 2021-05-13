@@ -48,7 +48,7 @@ phases:
       - aws s3 cp ${SUB_S3_IN} ${FS_SUB}/${SUB}/mprage.nii.gz
       ### END Setup test/minify env
       # the test command (without minify)
-      docker run --rm -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0
+      - docker run --rm -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0
       # the minify commands
       #- cmd1="infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0"
       # prep for minify
