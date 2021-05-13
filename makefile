@@ -34,7 +34,7 @@ fs-infant-dev:
 	      license_base64=${FS_LICENSE_BASE64} \
 	      method=source \
 	      repo=https://github.com/pwighton/freesurfer.git \
-	      version=20210115-fs-baby \
+	      version=20210513-fs-infant-dev-merge \
 	      infant_module=ON | \
 	docker build -t pwighton/fs-infant-dev -
 
