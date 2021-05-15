@@ -40,19 +40,21 @@ phases:
       - export FS_INFANT_MODEL=/tmp/run/fs-infant-model
       - export SUB=sub-CC00656XX13-ses-217601
       - export SUB_S3_IN=s3://fs-infant/test/smoke/sub-CC00656XX13_ses-217601_desc-restore_space-T2w_T1w.nii.gz
+      - export FS_INFANT_MODEL_S3_IN=s3://fs-infant/model/dev/
       - mkdir -p ${FS_DATAIN}
       - mkdir -p ${FS_SUB}
       - mkdir -p ${FS_INFANT_MODEL}
       - rm -rf ${FS_SUB}/${SUB}
       - mkdir -p ${FS_SUB}/${SUB}
       - aws s3 cp ${SUB_S3_IN} ${FS_SUB}/${SUB}/mprage.nii.gz
+      - aws s3 cp --recursive --include '*' ${FS_INFANT_MODEL_S3_IN} ${FS_INFANT_MODEL}/
       ### END Setup test/minify env
       # the test command (without minify)
-      - docker run --rm -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0
+      - docker run --rm -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model --entrypoint=/tmp/freesurfer/freesurfer-20210513-fs-infant-dev-merge/infant/docker/entrypoint.bash pwighton/fs-infant-dev:latest infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0
       # the minify commands
       #- cmd1="infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0"
       # prep for minify
-      #- docker run --security-opt seccomp:unconfined -it --rm -d --name container-to-min --entrypoint /bin/bash -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest
+      #- docker run --security-opt seccomp:unconfined --rm -d --name container-to-min --entrypoint /bin/bash -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest
       #- sleep 1
       # minify
       #- yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" 
