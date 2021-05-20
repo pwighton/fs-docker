@@ -51,16 +51,17 @@ phases:
       ### END Setup test/minify env
       # the test command (without minify)
       # pw 2021/05/20: not sure why I have to specificy the entrypoint explicitly... wont work without it tho
-      - docker run --rm --entrypoint /bin/infant-container-entrypoint.bash -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0
+      #- docker run --rm --entrypoint /bin/infant-container-entrypoint.bash -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0
       # the minify commands
-      #- cmd1="infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0"
+      - cmd1="/bin/infant-container-entrypoint.bash"
+      - cmd2="infant_recon_all --s sub-CC00656XX13-ses-217601 --age 0"
       # prep for minify
-      #- docker run --security-opt seccomp:unconfined --rm -d --name container-to-min --entrypoint /bin/bash -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest
-      #- sleep 1
+      - docker run --security-opt seccomp:unconfined --rm -d --name container-to-min --entrypoint /bin/bash -e SUBJECTS_DIR=/ext/fs-subjects -v ${FS_SUB}:/ext/fs-subjects -v ${FS_INFANT_MODEL}:/opt/fs-infant-model pwighton/fs-infant-dev:latest
+      - sleep 1
       # minify
-      #- yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" 
+      - yes | neurodocker-minify --container container-to-min --dirs-to-prune /opt --commands "$cmd1" "$cmd2" 
       # export minified container
-      #- docker export container-to-min | docker import - pwighton/fs-infant-dev:min
+      - docker export container-to-min | docker import - pwighton/fs-infant-dev:min
       # push containers, if all went well
-      #- docker push pwighton/fs-infant-dev:latest
-      #- docker push pwighton/fs-infant-dev:min
+      - docker push pwighton/fs-infant-dev:latest
+      - docker push pwighton/fs-infant-dev:min
