@@ -27,7 +27,7 @@ fs-infant-dev:
 	    --base-image ubuntu:xenial \
 	    --pkg-manager apt \
 	    --yes \
-	    --entrypoint /tmp/freesurfer/freesurfer-20210513-fs-infant-dev-merge/infant/docker/entrypoint.bash \
+	    --entrypoint /bin/infant-container-entrypoint.bash \
 	    --niftyreg \
 	      version=master \
 	    --fsl \
