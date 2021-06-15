@@ -24,11 +24,11 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      #!!- ND="docker run pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
+      - ND="docker run pwighton/neurodocker:latest" FS_LICENSE_BASE64=$FS_LICENSE make fs-infant-dev
       # Docker push now while debugging buildspec
-      #!!- docker push pwighton/fs-infant-dev:latest
-      # TO save time when debugging the test/minify (comment out `make fs-infant-dev` and `docker push` above
-      - docker pull pwighton/fs-infant-dev:latest
+      - docker push pwighton/fs-infant-dev:latest
+      #!! TO save time when debugging the test/minify (comment out `make fs-infant-dev` and `docker push` above
+      #!!- docker pull pwighton/fs-infant-dev:latest
   # Minify this beast of a container    
   post_build:
     on-failure: ABORT
