@@ -1,0 +1,18 @@
+# see https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
+version: 0.2
+
+# This assumes the build was configured to mount the EFS `fs-4253af39`
+env:
+  shell: bash
+  # https://stackoverflow.com/questions/58216549/how-to-retrieve-secret-manager-data-in-buildspec-yaml
+  parameter-store:
+    DOCKERHUB_PASS_PARAM: /dockerhub-access-token-for-pwighton
+    FS_LICENSE_PARAM: /freesurfer-ci-license
+
+phases:
+  install:
+    on-failure: ABORT
+    commands:
+      - curl example.org
+      - ls /mnt/
+      - echo $CODEBUILD_EFS_GIT_ANNEX
