@@ -24,7 +24,7 @@ fs-infant-dev:
 	    --base-image ubuntu:xenial \
 	    --pkg-manager apt \
 	    --yes \
-	    --entrypoint /bin/infant-container-entrypoint.bash \
+	    --entrypoint '/neurodocker/startup.sh /bin/infant-container-entrypoint.bash'
 	    --niftyreg \
 	      version=master \
 	    --fsl \
