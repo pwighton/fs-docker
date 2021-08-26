@@ -27,7 +27,7 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - docker run pwighton/neurodocker:latest generate docker --base-image ubuntu:xenial --pkg-manager apt --yes --freesurfer license_base64=$FS_LICENSE method=source repo=https://github.com/pwighton/freesurfer.git version=20210813-gems minimal=on samseg_atlas_build=on git_annex_get=off dev_tools=on infant_module=off install_python_deps=off distribute_fspython=off | docker build --no-cache -t pwighton/samseg-atlas-build -
+      - docker run pwighton/neurodocker:latest generate docker --base-image ubuntu:xenial --pkg-manager apt --yes --freesurfer license_base64=$FS_LICENSE method=source repo=https://github.com/pwighton/freesurfer.git version=20210813-gems minimal=on samseg_atlas_build=on git_annex_get=on dev_tools=on infant_module=off install_python_deps=off distribute_fspython=off | docker build --no-cache -t pwighton/samseg-atlas-build -
   post_build:
     on-failure: ABORT
     commands:
