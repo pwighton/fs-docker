@@ -17,8 +17,8 @@ phases:
       - docker login --username pwighton --password $DOCKERHUB_PASS
   build:
     on-failure: ABORT
-    commands: >-
-        docker run pwighton/neurodocker:latest generate docker
+    commands: 
+      > docker run pwighton/neurodocker:latest generate docker
           --base-image ubuntu:xenial
           --pkg-manager apt
           --yes
