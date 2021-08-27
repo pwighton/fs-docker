@@ -17,8 +17,23 @@ phases:
       - docker login --username pwighton --password $DOCKERHUB_PASS
   build:
     on-failure: ABORT
-    commands:
-      - docker run pwighton/neurodocker:latest generate docker --base-image ubuntu:xenial --pkg-manager apt --yes --freesurfer license_base64=$FS_LICENSE method=source repo=https://github.com/pwighton/freesurfer.git version=20210513-fs-infant-dev-merge minimal=off samseg_atlas_build=off infant_module=off install_python_deps=off distribute_fspython=off | docker build --no-cache -t pwighton/fs-dev-monolith -
+    commands: >
+        docker run pwighton/neurodocker:latest generate docker
+          --base-image ubuntu:xenial
+          --pkg-manager apt
+          --yes
+          --freesurfer
+            license_base64=$FS_LICENSE
+            method=source
+            repo=https://github.com/pwighton/freesurfer.git
+            version=20210813-gems
+            minimal=off
+            samseg_atlas_build=off
+            infant_module=off
+            install_python_deps=off
+            distribute_fspython=off
+            dev_tools=on 
+        | docker build --no-cache -t pwighton/fs-dev-monolith -
   post_build:
     on-failure: ABORT
     commands:
