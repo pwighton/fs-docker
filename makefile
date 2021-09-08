@@ -19,12 +19,15 @@ fs-run-nc:
 	cd ./run && docker build --no-cache -t pwighton/fs-dev-run .
 
 # via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
+
+# todo 2021/09/07: replace entrypoint filepath with equivalent ${FREESURFER_HOME} (`/opt/freesurfer-*`) 
+# path after entrypoint gets installed
 fs-infant-dev:
 	${ND} generate docker \
 	    --base-image ubuntu:xenial \
 	    --pkg-manager apt \
 	    --yes \
-	    --entrypoint '/neurodocker/startup.sh /bin/infant-container-entrypoint.bash'
+	    --entrypoint '/tmp/freesurfer/freesurfer-20210513-fs-infant-dev-merge/infant/docker/infant-container-entrypoint-aws.bash'
 	    --niftyreg \
 	      version=master \
 	    --fsl \
@@ -34,8 +37,9 @@ fs-infant-dev:
 	      license_base64=${FS_LICENSE_BASE64} \
 	      method=source \
 	      repo=https://github.com/pwighton/freesurfer.git \
-	      version=20210513-fs-infant-dev-merge \
-	      infant_module=ON | \
+	      version=20210813-gems \
+	      infant_module=ON \
+	      dev_tools=ON | \
 	docker build -t pwighton/fs-infant-dev -
 
 
