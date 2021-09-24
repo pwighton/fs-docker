@@ -27,21 +27,20 @@ fs-infant-dev:
 	    --base-image ubuntu:xenial \
 	    --pkg-manager apt \
 	    --yes \
-	    --entrypoint '/tmp/freesurfer/freesurfer-20210513-fs-infant-dev-merge/infant/docker/infant-container-entrypoint-aws.bash' \
 	    --niftyreg \
 	      version=master \
 	    --fsl \
 	      version=5.0.10 \
 	      method=binaries \
 	    --freesurfer \
-	      license_base64=${FS_LICENSE_BASE64} \
 	      method=source \
-	      repo=https://github.com/pwighton/freesurfer.git \
 	      version=20210813-gems \
+	      license_base64=${FS_LICENSE_BASE64} \
+	      repo=https://github.com/pwighton/freesurfer.git \
 	      infant_module=ON \
-	      dev_tools=ON | \
-	docker build -t pwighton/fs-infant-dev -
-
+	      dev_tools=ON \
+	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
+	| docker build -t pwighton/fs-infant-dev -
 
 fs-baby: fs-baby-base
 	cd ./baby && docker build -t pwighton/fs-baby .
