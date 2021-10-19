@@ -1,7 +1,7 @@
 FS_LICENSE_BASE64 ?= ""
 FS_REPO ?= "https://github.com/freesurfer/freesurfer"
 FS_BRANCH ?= "dev"
-ND ?= "neuroocker"
+ND ?= "neurodocker"
 
 all: fs-build
 #all: fs-build fs-run
@@ -34,9 +34,9 @@ fs-infant-dev:
 	      method=binaries \
 	    --freesurfer \
 	      method=source \
-	      version=20210813-gems \
-	      license_base64=${FS_LICENSE_BASE64} \
 	      repo=https://github.com/pwighton/freesurfer.git \
+	      branch=20210813-gems \
+	      license_base64=${FS_LICENSE_BASE64} \
 	      infant_module=ON \
 	      dev_tools=ON \
 	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
@@ -59,7 +59,7 @@ fs-baby-base-dockerfile:
 	    --pkg-manager apt \
 	    --neurodebian \
 	      os_codename=xenial \
-	      server=usa-nh \
+	      version=usa-nh \
 	    --fsl \
 	      version=5.0.10 \
 	      method=binaries \
@@ -74,3 +74,28 @@ fs-baby-base: fs-baby-base-dockerfile
 	
 fs-baby-base-nc: fs-baby-base-dockerfile
 	cd ./baby && docker build --no-cache -t pwighton/fs-baby-base -f dockerfile.fs-baby-base .
+
+fs-pet-nipype-base:
+	${ND} generate docker \
+	  --yes \
+	  --base-image ubuntu:xenial \
+	  --pkg-manager apt \
+	  --neurodebian \
+	    os_codename=xenial \
+	    version=usa-nh \
+	  --freesurfer \
+	    method=source \
+	    repo=https://github.com/freesurfer/freesurfer.git \
+	    branch=dev \
+	    license_base64=${FS_LICENSE_BASE64} \
+	    dev_tools=ON \
+	    minimal=OFF \
+	    samseg_atlas_build=OFF \
+	    infant_module=OFF \
+	  --fsl \
+	    version=5.0.10 \
+	    method=binaries \
+	| docker build --no-cache -t pwighton/petsurfer-bids-base -
+
+fs-pet-nipype:
+	cd ./petsurfer-bids && docker build --no-cache -t pwighton/petsurfer-bids .

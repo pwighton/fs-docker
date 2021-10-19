@@ -1,0 +1,18 @@
+FROM pwighton/petsurfer-bids-base:latest
+
+RUN apt-get update -qq \
+    && apt-get install -y -q --no-install-recommends graphviz
+
+RUN git clone --branch main https://github.com/openneuropet/derivatives.git /opt/openneuropet-derivatives
+
+RUN git clone --branch add_pet_freesurfer https://github.com/mnoergaard/nipype.git /opt/nipype \
+    && cd /opt/nipype \
+    && pip install -e .
+    
+RUN git clone --branch 20211019-tweaks https://github.com/pwighton/petpipeline.git /opt/petpipeline \
+    && cd /opt/petpipeline \
+    && pip install -e .
+
+# rename the build-stamp because it throws errors when nipype tries to parse it
+# todo: fix
+RUN mv /opt/freesurfer-dev/build-stamp.txt /opt/freesurfer-dev/build-stamp-tmp.txt
