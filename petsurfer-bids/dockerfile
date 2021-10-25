@@ -9,7 +9,7 @@ RUN git clone --branch add_pet_freesurfer https://github.com/mnoergaard/nipype.g
     && cd /opt/nipype \
     && pip install -e .
     
-RUN git clone --branch 20211019-tweaks https://github.com/pwighton/petpipeline.git /opt/petpipeline \
+RUN git clone --branch main https://github.com/openneuropet/petpipeline.git /opt/petpipeline \
     && cd /opt/petpipeline \
     && pip install -e .
 
