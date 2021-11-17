@@ -39,7 +39,7 @@ fs-infant-dev:
 	      license_base64=${FS_LICENSE_BASE64} \
 	      infant_module=ON \
 	      dev_tools=ON \
-	    --entrypoint '/tmp/freesurfer/freesurfer-20210813-gems/infant/docker/infant-container-entrypoint-aws.bash' \
+	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
 	| docker build -t pwighton/fs-infant-dev -
 
 # alt:
