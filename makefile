@@ -3,7 +3,7 @@ FS_REPO ?= "https://github.com/freesurfer/freesurfer"
 FS_BRANCH ?= "dev"
 ND ?= "neurodocker"
 
-all: fs-build
+#all: fs-build
 #all: fs-build fs-run
 
 fs-build:
@@ -18,8 +18,17 @@ fs-run:
 fs-run-nc:
 	cd ./run && docker build --no-cache -t pwighton/fs-dev-run .
 
-# via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
+fs-720:
+	${ND} generate docker \
+	    --base-image ubuntu:xenial \
+	    --pkg-manager apt \
+	    --freesurfer version=7.2.0 \
+	    --matlabmcr version=2014b install_path=/opt/MCRv84 \
+	    --run "ln -s /opt/MCRv84/v84 /opt/freesurfer-7.2.0/MCRv84" \
+	    | docker build -t pwighton/freesurfer:7.2.0 -
 
+
+# via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
 # todo 2021/09/07: replace entrypoint filepath with equivalent ${FREESURFER_HOME} (`/opt/freesurfer-*`) 
 # path after entrypoint gets installed
 fs-infant-dev:
@@ -78,7 +87,22 @@ fs-baby-base: fs-baby-base-dockerfile
 fs-baby-base-nc: fs-baby-base-dockerfile
 	cd ./baby && docker build --no-cache -t pwighton/fs-baby-base -f dockerfile.fs-baby-base .
 
-fs-pet-nipype-base:
+petsurfer:
+	${ND} generate docker \
+	    --yes \
+	    --base-image python:3.8-buster \
+	    --pkg-manager apt \
+	    --fsl \
+	      version=5.0.10 \
+	      method=binaries \
+	    --freesurfer \
+	      version=7.2.0 \
+	    | docker build -t pwighton/petsurfer:7.2.0 -
+
+petsurfer-bids:
+	cd ./petsurfer-bids && docker build -f dockerfile --no-cache -t pwighton/petsurfer-bids:7.2.0 .
+	
+fs-pet-dev-nipype-base:
 	${ND} generate docker \
 	  --yes \
 	  --base-image ubuntu:xenial \
@@ -98,7 +122,7 @@ fs-pet-nipype-base:
 	  --fsl \
 	    version=5.0.10 \
 	    method=binaries \
-	| docker build --no-cache -t pwighton/petsurfer-bids-base -
+	| docker build --no-cache -t pwighton/petsurfer-bids-base:dev -
 
-fs-pet-nipype:
-	cd ./petsurfer-bids && docker build --no-cache -t pwighton/petsurfer-bids .
+fs-pet-dev-nipype:
+	cd ./petsurfer-bids && docker build -f dockerfile-dev --no-cache -t pwighton/petsurfer-bids:dev .
