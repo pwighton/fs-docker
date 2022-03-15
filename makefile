@@ -29,8 +29,6 @@ fs-720:
 
 
 # via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
-# todo 2021/09/07: replace entrypoint filepath with equivalent ${FREESURFER_HOME} (`/opt/freesurfer-*`) 
-# path after entrypoint gets installed
 fs-infant-dev:
 	${ND} generate docker \
 	    --base-image ubuntu:xenial \
@@ -44,12 +42,12 @@ fs-infant-dev:
 	    --freesurfer \
 	      method=source \
 	      repo=https://github.com/pwighton/freesurfer.git \
-	      branch=20210813-gems \
+	      branch=20220224-gems-cmake-rework \
 	      license_base64=${FS_LICENSE_BASE64} \
 	      infant_module=ON \
 	      dev_tools=ON \
 	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
-	| docker build -t pwighton/fs-infant-dev -
+	| docker build --network host -t pwighton/fs-infant-dev -
 
 # alt:
 # --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
