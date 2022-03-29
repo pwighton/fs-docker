@@ -46,7 +46,7 @@ fs-infant-dev:
 	      infant_module=ON \
 	      dev_tools=ON \
 	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
-	| docker build --network host -t pwighton/fs-infant-dev -
+	| docker build --no-cache --network host -t pwighton/fs-infant-dev -
 
 # Same as above, but the h5 skullstripped files are copied into the container
 fs-infant-dev-model-inside:
@@ -69,7 +69,7 @@ fs-infant-dev-model-inside:
 	      infant_model_s3=s3://freesurfer-annex/infant/model/dev/ \
 	      infant_model_s3_region=us-east-2 \
 	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
-	| docker build -t pwighton/fs-infant-dev -
+	| docker build --no-cache --network host -t pwighton/fs-infant-dev -
 	
 # alt:
 # --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
