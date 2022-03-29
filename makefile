@@ -28,8 +28,6 @@ fs-720:
 	    | docker build -t pwighton/freesurfer:7.2.0 -
 
 # via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
-# todo 2021/09/07: replace entrypoint filepath with equivalent ${FREESURFER_HOME} (`/opt/freesurfer-*`) 
-# path after entrypoint gets installed
 fs-infant-dev:
 	${ND} generate docker \
 	    --base-image ubuntu:xenial \
@@ -48,7 +46,7 @@ fs-infant-dev:
 	      infant_module=ON \
 	      dev_tools=ON \
 	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
-	| docker build -t pwighton/fs-infant-dev -
+	| docker build --network host -t pwighton/fs-infant-dev -
 
 # Same as above, but the h5 skullstripped files are copied into the container
 fs-infant-dev-model-inside:
