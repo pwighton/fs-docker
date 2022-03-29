@@ -27,7 +27,6 @@ fs-720:
 	    --run "ln -s /opt/MCRv84/v84 /opt/freesurfer-7.2.0/MCRv84" \
 	    | docker build -t pwighton/freesurfer:7.2.0 -
 
-
 # via neurodocker (WIP) https://github.com/pwighton/neurodocker/tree/20210226-fs-source
 # todo 2021/09/07: replace entrypoint filepath with equivalent ${FREESURFER_HOME} (`/opt/freesurfer-*`) 
 # path after entrypoint gets installed
@@ -44,13 +43,36 @@ fs-infant-dev:
 	    --freesurfer \
 	      method=source \
 	      repo=https://github.com/pwighton/freesurfer.git \
-	      branch=20210813-gems \
+	      branch=20220224-gems-cmake-rework \
 	      license_base64=${FS_LICENSE_BASE64} \
 	      infant_module=ON \
 	      dev_tools=ON \
 	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
 	| docker build -t pwighton/fs-infant-dev -
 
+# Same as above, but the h5 skullstripped files are copied into the container
+fs-infant-dev-model-inside:
+	${ND} generate docker \
+	    --base-image ubuntu:xenial \
+	    --pkg-manager apt \
+	    --yes \
+	    --niftyreg \
+	      version=master \
+	    --fsl \
+	      version=5.0.10 \
+	      method=binaries \
+	    --freesurfer \
+	      method=source \
+	      repo=https://github.com/pwighton/freesurfer.git \
+	      branch=20220224-gems-cmake-rework \
+	      license_base64=${FS_LICENSE_BASE64} \
+	      infant_module=ON \
+	      dev_tools=ON \
+	      infant_model_s3=s3://freesurfer-annex/infant/model/dev/ \
+	      infant_model_s3_region=us-east-2 \
+	    --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
+	| docker build -t pwighton/fs-infant-dev -
+	
 # alt:
 # --entrypoint '/bin/infant-container-entrypoint-aws.bash' \
 
@@ -101,7 +123,10 @@ petsurfer:
 
 petsurfer-bids:
 	cd ./petsurfer-bids && docker build -f dockerfile --no-cache -t pwighton/petsurfer-bids:7.2.0 .
-	
+
+petsurfer-bids-vb:
+	cd ./petsurfer-bids && docker build -f dockerfile-vb-test --no-cache -t pwighton/petsurfer-bids-vb:7.2.0 .
+
 fs-pet-dev-nipype-base:
 	${ND} generate docker \
 	  --yes \
