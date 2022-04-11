@@ -119,11 +119,11 @@ petsurfer:
 	      version=7.2.0 \
 	    | docker build -t pwighton/petsurfer:7.2.0 -
 
-petsurfer-bids:
+petsurfer-bids: petsurfer-bids/dockerfile
 	cd ./petsurfer-bids && docker build -f dockerfile --no-cache -t pwighton/petsurfer-bids:7.2.0 .
 
-petsurfer-bids-vb:
-	cd ./petsurfer-bids && docker build -f dockerfile-vb-test --no-cache -t pwighton/petsurfer-bids-vb:7.2.0 .
+petsurfer-bids-dev:
+	cd ./petsurfer-bids && docker build -f dockerfile-dev --no-cache -t pwighton/petsurfer-bids-vb:7.2.0 .
 
 fs-pet-dev-nipype-base:
 	${ND} generate docker \
