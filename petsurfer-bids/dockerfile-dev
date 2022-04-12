@@ -1,7 +1,7 @@
 FROM pwighton/petsurfer-bids-dev-base:latest
 
 RUN apt-get update -qq \
-    && apt-get install -y -q --no-install-recommends graphviz
+    && apt-get install -y -q --no-install-recommends graphviz git
 
 RUN git clone --branch main https://github.com/openneuropet/derivatives.git /opt/openneuropet-derivatives
 
@@ -9,7 +9,7 @@ RUN git clone --branch add_pet_freesurfer https://github.com/mnoergaard/nipype.g
     && cd /opt/nipype \
     && pip install -e .
     
-RUN git clone --branch main https://github.com/openneuropet/petpipeline.git /opt/petpipeline \
+RUN git clone --branch main https://github.com/openneuropet/PET_pipelines.git /opt/pet-pipelines \
     && cd /opt/petpipeline \
     && pip install -e .
 
