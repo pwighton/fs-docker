@@ -178,6 +178,10 @@ export FS_INFANT_AGE=0
 Now lets create the directory structure
 ```
 mkdir -p $FS_SUBJECT_DIR_OUT_CONTAINER/$FS_SUB_NAME
+```
+
+And populate it with test data
+```
 aws s3 cp s3://fs-infant/test/smoke/sub-CC00656XX13_ses-217601_desc-restore_space-T2w_T1w.nii.gz $FS_SUBJECT_DIR_OUT_CONTAINER/$FS_SUB_NAME/mprage.nii.gz
 ```
 
