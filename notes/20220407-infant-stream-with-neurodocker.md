@@ -196,9 +196,15 @@ docker run -it --rm \
 
 **TODO** set SCNN_MODEL_DIR by default so we don't need to specify it at runtime
 
+## Examining the output
+
+**TODO**
+- Description of output
+- Using neurodesktop to visualize outputs
+
 ## References
 
-
+**TODO**
 
 
 
