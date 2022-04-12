@@ -115,7 +115,6 @@ This will generate a string similar to
 
 ```
 cHdpZ2h0b25AbWdoLmhhcnZhcmQuZWR1----EXAMPLE----4V25Gc2V3M3MuCiBGU2VJb1Q4Sklha1prCg==
-cHdpZ2h0b25AbWdoLmhhcnZhcmQuZWR1CjU1NDc4CiAqQ0Y4V25Gc2V3M3MuCiBGU2VJb1Q4Sklha1prCg==
 ```
 
 Next, pass this string to neurodocker as `license_base64`, e.g:
