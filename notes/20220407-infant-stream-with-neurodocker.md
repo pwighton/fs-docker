@@ -172,7 +172,7 @@ You can follow the steps above to create a docker container to run the pipeline.
 docker pull pwighton/fs-infant-dev:20220414
 ```
 
-You can download test data from `s3://freesurfer-annex/infant/test/smoke/mprage.nii.gz`.  This is data is from [`[1]`](https://pubmed.ncbi.nlm.nih.gov/25741260/), and has been defaced using [pydeface](https://github.com/poldracklab/pydeface) (the container `poldracklab/pydeface:37-2e0c2d`)
+You can download test data from `s3://freesurfer-annex/infant/test/smoke/mprage.nii.gz`.  This is data is from [`[1]`](https://pubmed.ncbi.nlm.nih.gov/25741260/), and has been defaced with [pydeface](https://github.com/poldracklab/pydeface) (using the container `poldracklab/pydeface:37-2e0c2d`)
 
 In order to run the infant pipeline, the input data must be in a subfolder of the FreeSurfer's subject directory.  The name of this subfolder is the subject's name.  Inside this subfolder should be a single file named `mprage.nii.gz`
 
