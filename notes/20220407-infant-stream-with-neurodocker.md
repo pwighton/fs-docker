@@ -4,7 +4,7 @@ This guide describes how to build and run containers to execute and examine the 
 
 ## Overview
 
-[FreeSurfer's infant pipeline](https://surfer.nmr.mgh.harvard.edu/fswiki/infantFS) provides a morphological analysis of human neuroanatomy from MRI scans of subjects that are between 0 and 24 months old.
+[FreeSurfer's infant pipeline](https://surfer.nmr.mgh.harvard.edu/fswiki/infantFS) provides a morphological (both voluimetric and surface-based) analysis of human neuroanatomy from MRI scans of subjects that are between 0 and 24 months old.
 
 The input to the pipeline is an T1-weighted MRI image that has been optimized to maximize the contrast between grey matter, white matter and cerebral spinal fluid (CSF). See [this document](https://www.nmr.mgh.harvard.edu/~andre/FreeSurfer_recommended_morphometry_protocols.pdf) for guidance on how to configure your MRI scanner to generate these images.
 
@@ -22,12 +22,13 @@ In order to follow along with this guide, you'll need:
 
 - [Docker](https://docs.docker.com/get-docker/)
   - Root access is required to install and configure docker
-- 20 Gb of RAM
+- 20 Gb of free RAM to run the pipeline
 - Test data, available at `s3://freesurfer-annex/infant/test/smoke/mprage.nii.gz`
+  - [awscli](https://aws.amazon.com/cli/) to download the test data
 - The following containers are used:
-  - `pwighton/neurodocker:20220414`
-  - `pwighton/fs-infant-dev:20220414`
-  - `vnmd/neurodesktop:20211014`
+  - `pwighton/neurodocker:20220414` (~78.6MB)
+  - `pwighton/fs-infant-dev:20220414` (~41GB)
+  - `vnmd/neurodesktop:20211014` (~3.46GB)
   
 ## Using Neurodocker to Generating Containers for FreeSurfer's infant pipeline
 
@@ -40,7 +41,7 @@ The infant pipeline has several dependencies, in addition to FreeSurfer, includi
 
 One could manually create a docker container that inherits from the FreeSurfer container and install the required dependencies, however we use [Neurodokcer](https://www.repronim.org/neurodocker/) to facilitate this process.  Neurodocker is a "command-line program that generates custom Dockerfiles and Singularity recipes for neuroimaging".
 
-[This fork](https://github.com/pwighton/neurodocker/tree/20220414-fs-source) of neurodocker includes support for installing FreeSurfer, compiling FreeSurfer from source, and installing the dependencies required by the infant pipeline.  The resulting container for this fork is available at [`pwighton/neurodocker:20220414`](https://hub.docker.com/layers/neurodocker/pwighton/neurodocker/20220414/images/sha256-1390933115d04f4f1423219234aa8b2366a4ca1ac4442e503b8eb6f3fa08a569?context=explore).  It can be invoked to create a container to run the infant pipeline with:
+[This pull request](https://github.com/ReproNim/neurodocker/pull/445) adds support to neurodocker for compiling FreeSurfer from source, and installing the dependencies required by the infant pipeline.  The resulting container for this pull request is available at [`pwighton/neurodocker:20220414`](https://hub.docker.com/layers/neurodocker/pwighton/neurodocker/20220414/images/sha256-1390933115d04f4f1423219234aa8b2366a4ca1ac4442e503b8eb6f3fa08a569?context=explore).  It can be invoked to create a container to run the infant pipeline with:
 
 ```
 docker run pwighton/neurodocker:20220414 generate docker \
@@ -71,7 +72,7 @@ This builds a container called `pwighton/fs-infant-dev:20220414-nl` that:
   - Compiles and installs niftyreg from source
   - Does not include a FreeSurfer License key (hence the `nl` suffix on the container tag)
 
-Instead of building FreeSurfer from source, Neurodocker can also be used to create containers with a released version of FreeSurfer, however the latest release of FreeSurfer (v7.2) does not include the pre-requisites to easily create and run the infant pipeline.
+Instead of building FreeSurfer from source, Neurodocker can also be used to create containers with a released version of FreeSurfer, however the latest release of FreeSurfer (v7.2) does not include the pre-requisites to easily create and run the infant pipeline via neurodocker.
 
 Other possible use cases for creating FreeSurfer containers from source are described in the [neurodocker pull request](https://github.com/ReproNim/neurodocker/pull/445)
 
@@ -101,9 +102,9 @@ ERROR: FreeSurfer license file /opt/license.txt not found.
   specified with the FS_LICENSE environmental variable.
 ```
 
-The license key can be passed to the container at runtime via a [docker bind mount](https://docs.docker.com/storage/bind-mounts/) and setting the environment variable `FS_LICENSE` which points to the location of license file.
+The license key file can be passed to the container at runtime via a [docker bind mount](https://docs.docker.com/storage/bind-mounts/) and setting the environment variable `FS_LICENSE` which tell FreeSrufer where to find the license file.
 
-For example, suppose the FreeSurfer license file is at `$HOME/license.txt` outside of the container. The license file can bind mounted to `/license.txt` inside the container by passing `-v $HOME/license.txt:/license.txt:ro` to `docker run`.  Similarly the environment variable `FS_LICENSE` tell FreeSurfer where the license file is located.  It can be set to point to `/license.txt` by passing `-e FS_LICENSE=/license.txt` to `docker run`, e.g:
+For example, suppose the FreeSurfer license file is at `$HOME/license.txt` outside of the container. The license file can bind mounted to `/license.txt` inside the container by passing `-v $HOME/license.txt:/license.txt:ro` to `docker run`.  Similarly the environment variable `FS_LICENSE` can be set to `/license.txt` by passing `-e FS_LICENSE=/license.txt` to `docker run`, e.g:
 
 ```
 docker run -it --rm \
@@ -129,7 +130,7 @@ This will generate a string similar to
 cHdpZ2h0b25AbWdoLmhhcnZhcmQuZWR1----EXAMPLE----4V25Gc2V3M3MuCiBGU2VJb1Q4Sklha1prCg==
 ```
 
-Next, pass this string to Neurodocker as `license_base64`, e.g:
+Next, pass this string to Neurodocker as `license_base64` when the container is built, e.g:
 
 ```
 docker run pwighton/neurodocker:20220414 generate docker \
@@ -173,7 +174,7 @@ docker pull pwighton/fs-infant-dev:20220414
 
 You can download test data from `s3://freesurfer-annex/infant/test/smoke/mprage.nii.gz`.  This is data is from [`[1]`](https://pubmed.ncbi.nlm.nih.gov/25741260/), and has been defaced using [pydeface](https://github.com/poldracklab/pydeface) (the container `poldracklab/pydeface:37-2e0c2d`)
 
-In order to run the infant pipeline, the input data must be in a subfolder of the FreeSurfer's subject directory.  The name of this subfolder is the subject's name.  Inside this subfolder should be a single file named `mprage.mgz`
+In order to run the infant pipeline, the input data must be in a subfolder of the FreeSurfer's subject directory.  The name of this subfolder is the subject's name.  Inside this subfolder should be a single file named `mprage.nii.gz`
 
 Let's setup this directory structure outside of the container and set some environment variables to help manage things.  Let's define the FreeSurfer subject's directory outside the container as `$HOME/fs-subjects`.  Inside the container, the subject's directory defaults to `/ext/fs-subjects`.  This can be changed at runtime (e.g `docker run -e SUBJECTS_DIR=/ext/foo..`) however we will use the default.  The other two pieces of information the pipeline needs is the subject's name (`smoke-test`) as well as the age of the subject in months (`18`)
 
@@ -206,26 +207,65 @@ docker run -it --rm \
     infant_recon_all --s ${FS_SUB_NAME} --age ${FS_INFANT_AGE}
 ```
 
-## Examining the output
+## The Outputs of FreeSurfer's infant pipeline
+
+After the pipeline finishes, the subject's directory (`$FS_SUBJECT_DIR_OUT_CONTAINER/$FS_SUB_NAME/`) will contain the following directories.
+
+- `label`: todo describe label dir
+- `log`: todo describe log dir
+- `mri`: todo describe mri dir
+- `stats`: todo describe stats dir
+- `surf`: todo describe surf dir
+
+Marjor outputs of the pipeline include:
+
+- `mri/aseg.nii.gz`: todo describe
+- `surf/lh.orig`: todo desribe
+- `surf/rh.orig`: todo desribe
+- others?
+
+### Examining the output in FreeView via Neurodesktop
+
+FreeView is FreeSurfer's GUI application for inspecting and editing results.  Here we use [Neurodesktop](https://github.com/NeuroDesk/neurodesktop) as a convinient container-based and cross-platform way to access FreeView via a web broswer.
+
+To begin, let's create a folder to serve Neurodesktop's persistent storage:
+
+```
+mkdir -p $HOME/neurodesktop-storage
+```
+
+Next, launch Neurodesktop and bind-mount both the folder for Neurodesktop's peristent storage (`$HOME/neurodesktop-storage`) as well as FreeSurfer's subject directory (`$FS_SUBJECT_DIR_OUT_CONTAINER`).  Note we are mounting FreeSurfer's subject directory to `/home/user/fs-subejects`.  The default Neurodocker user is `user`, and mounting the subject directory inside their home directory (`/home/user/`) facilitates navigation and use.
 
 ```
 docker run \
     --shm-size=1gb -it --rm --privileged \
-    -v ~/neurodesktop-storage:/neurodesktop-storage \
-    -v $HOME:/home/user/ \
+    -v $HOME/neurodesktop-storage:/neurodesktop-storage \
+    -v $FS_SUBJECT_DIR_OUT_CONTAINER:/home/user/fs-subjects \
     -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
     -p 8080:8080 -h neurodesktop20211014 \
     vnmd/neurodesktop:20211014
 ```
 
-Select the icon in the bottom left corner, then select: `Neurodesk` -> `Image Segmentaiont` -> `freesurfer` -> `freeviewGUI 7.1.1`.  The first time this is run, Neurodesk will automatically download and install 
+After Neurodocker starts, the terminal output should describe how to access it via a browser:
+```
+    Use this link for direct Neurodesktop:
+!!! http://localhost:8080/#/?username=user&password=password !!!
+    Once connected to the session, your user info is:
+    Username: "user"
+    Password: "password"
+```
 
-Once freeview loads, select `File` -> `Load Volume` 
+Open a web browser, and browse to [http://localhost:8080/#/?username=user&password=password](http://localhost:8080/#/?username=user&password=password) and select 'Desktop Auto-Resolution (RDP)'.
 
+Once inside the Neurodesktop Linux environment, select the icon in the bottom left corner, then select: `Neurodesk` -> `Image Segmentaiont` -> `freesurfer` -> `freeviewGUI 7.1.1`.  The first time this is run, Neurodesk will automatically download and install FreeView.
 
-**TODO**
-- Description of output
-- Using neurodesktop to visualize outputs
+Once freeview loads, select `File` -> `Load Volume` to load the original input image which is now located at `/home/user/fs-subjects/smoke-test/mprage.nii.gz` inside the Neurodesktop environment.
+
+You can also select `File` -> `Load Volume` to load the volumetric segmentation, which is now located at `/home/user/fs-subjects/smoke-test/mri/aseg.nii.gz` inside the Neurodesktop environment.  Be sure to select 'Color Map: LookupTable / Lookup Table: FreeSurferColorLUT' when loading this volume so it renders correctly.
+
+You can load the grey/white matter surfaces by selecting `File` -> `Load Surface`, which is now located at `/home/user/fs-subjects/smoke-test/surf/rh.org` and `/home/user/fs-subjects/smoke-test/surf/lh.org`
+
+For more information on using FreeView, please see the [FreeView Guide](https://surfer.nmr.mgh.harvard.edu/fswiki/FreeviewGuide/)
 
 ## References
 
