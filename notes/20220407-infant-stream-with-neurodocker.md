@@ -30,7 +30,7 @@ In order to follow along with this guide, you'll need:
   - `pwighton/fs-infant-dev:20220414` (~41GB)
   - `vnmd/neurodesktop:20211014` (~3.46GB)
   
-## Using Neurodocker to Generating Containers for FreeSurfer's infant pipeline
+## Using Neurodocker to Generate Containers for FreeSurfer's infant pipeline
 
 The FreeSurfer codebase comes with a [dockerfile](https://github.com/freesurfer/freesurfer/blob/dev/Dockerfile) which is available on [dockerhub](https://hub.docker.com/) at [`freesurfer/freesurfer`](https://hub.docker.com/r/freesurfer/freesurfer) however this only contains the FreeSurfer distribution and does not include any third-party tools.
 
