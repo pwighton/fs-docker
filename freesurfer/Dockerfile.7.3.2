@@ -8,7 +8,7 @@ WORKDIR /root
 # install utils
 RUN yum -y update && \
     yum -y install bc libgomp perl tar tcsh wget vim-common && \
-    yum -y install mesa-libGL libXext libSM libXrender libXmu && \
+    yum -y install mesa-libGL libXext libSM libXrender libXmu gcc-gfortran && \
     yum clean all
 
 # install fs
