@@ -1,6 +1,8 @@
 # Running BIDS datasets though PetSurfer
 
 BrainHack Nordic 2022
+- https://github.com/pwighton/fs-docker/blob/master/notes/20221205-petsurfer-brainhack-global.md
+- 
 
 ## Follow Along
 
@@ -83,8 +85,6 @@ There are several ways to get a FreeSurfer env
 - And run it in virtualbox
 - [Instructions](https://surfer.nmr.mgh.harvard.edu/fswiki/VM_67)
 
-
-
 ## Exploring the data
 
 ```
@@ -109,3 +109,90 @@ Gives
 └── temp
     └── preprocessing
 ```
+
+- `./derivatives` are the outputs of the pipeline
+- `./ds001421_openneuro.org` is the data as downloaded from openneuro
+  - `./ds001421_openneuro.org/derivatives` is not used
+- `./freesurfer` is the FreeSurfer subject's directory
+- `./temp` are nipype working directories
+  - See `./temp/preprocessing/graph.png` for the nipype DAG
+
+### Cautionary note about image file formats 
+
+The file extensions `nii`, `nii.gz`, `mgh`, `mgz` are traditionally 3d imaging formats and that is sometimes case the across this dataset, but it is also used as intermediate and output files for ROI-based analysis so that they can be performed with [`mri_glmfit`](https://surfer.nmr.mgh.harvard.edu/fswiki/mri_glmfit).  These files have voxel dimensions of `N x 1 x 1 x M` and are not viewable in traditional viewers.  Use `mri_info --dim filename` to identify these files.
+
+These files can be converted to a numpy array via:
+
+```
+import nibabel as nb
+ 
+filename='gtm.nii.gz'
+gtm_nb = nb.load(filename)
+gtm = gtm_nb.get_fdata().squeeze()
+```
+
+## Viewing the DAG
+
+See `./temp/preprocessing/graph.png` for the nipype DAG
+
+![PetPipeline DAG](pet-pipeline-dag.png)
+
+## Vieweing some data
+
+In MRI space:
+```
+freeview \
+  --volume  ./freesurfer/baseline_01/mri/orig.mgz \
+  --volume  ./freesurfer/baseline_01/mri/aseg.mgz:colormap=lut \
+  --surface ./freesurfer/baseline_01/surf/lh.white \
+  --surface ./freesurfer/baseline_01/surf/rh.white \
+  --surface ./freesurfer/baseline_01/surf/lh.pial \
+  --surface ./freesurfer/baseline_01/surf/rh.pial
+```
+
+In PET space:
+```
+freeview \
+  --volume ./ds001421_openneuro.org/sub-01/ses-baseline/pet/sub-01_ses-baseline_pet.nii.gz \
+  --volume ./derivatives/pvc/sub-01/ses-baseline/aux/seg.nii.gz:colormap=lut
+```
+
+## Playing with surfaces
+
+Extract a single frame (frame #25) from the multi-frame pet data:
+```
+mri_convert -nth 25 \
+  ./ds001421_openneuro.org/sub-01/ses-baseline/pet/sub-01_ses-baseline_pet.nii.gz \
+  ./ds001421_openneuro.org/sub-01/ses-baseline/pet/sub-01_ses-baseline_pet--frame25.nii.gz
+```
+
+Project a frame onto the surface:
+```
+export SUBJECTS_DIR=/home/paul/lcn/20221130-petsurfer-bids-processed-datasets/ds001421/freesurfer
+mri_vol2surf \
+  --mov ./ds001421_openneuro.org/sub-01/ses-baseline/pet/sub-01_ses-baseline_pet--frame25.nii.gz \
+  --reg ./derivatives/coregistration/sub-01/ses-baseline/registration.lta \
+  --hemi lh \
+  --projfrac 0.5 \
+  --o ./freesurfer/baseline_01/surf/sub-01--ses-baseline--lh.pet.fsaverage.sm00.frame25.nii.gz \
+  --cortex \
+  --trgsubject baseline_01
+```
+
+Visualize
+```
+freeview \
+  --volume ./freesurfer/baseline_01/mri/orig.mgz \
+  --surface ./freesurfer/baseline_01/surf/lh.white:overlay=./freesurfer/baseline_01/surf/sub-01--ses-baseline--lh.pet.fsaverage.sm00.nii.gz \
+  --surface ./freesurfer/baseline_01/surf/lh.inflated:overlay=./freesurfer/baseline_01/surf/sub-01--ses-baseline--lh.pet.fsaverage.sm00.nii.gz
+```
+
+More details [here](https://surfer.nmr.mgh.harvard.edu/fswiki/PetSurfer#Surface-basedanalysis)
+
+## Petsurfer Resources
+
+- [Petsurfer Wiki Page](https://surfer.nmr.mgh.harvard.edu/fswiki/PetSurfer)
+- [PetSrufer Tutorial](https://surfer.nmr.mgh.harvard.edu/fswiki/PetSurferKmTutorial)
+- [PetSurfer Talk by Doug at last year’s BrainHack](https://youtu.be/1-sgAct6_NY?t=1583)
+- [FreeSurfer Mailing List](http://mail.nmr.mgh.harvard.edu/mailman/listinfo/freesurfer)
+- [FreeSurfer License Keys](https://surfer.nmr.mgh.harvard.edu/registration.html)
