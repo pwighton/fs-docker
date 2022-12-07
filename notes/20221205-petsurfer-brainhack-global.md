@@ -1,12 +1,36 @@
 # Running BIDS datasets though PetSurfer
 
-BrainHack Nordic 2022
+BrainHack Nordic 2022/12/07
 - https://github.com/pwighton/fs-docker/blob/master/notes/20221205-petsurfer-brainhack-global.md
-- 
 
 ## Follow Along
 
 To follow along on your machine, you'll need some data and a FreeSurfer env.
+
+### Setup a FreeSurfer env
+
+There are several ways to get a FreeSurfer env
+
+**1) BrainHack Cloud**
+- https://bhnam.neurodesk.org/
+- Authenticate via github to get a [neurodesk](https://www.neurodesk.org/) env with
+  - 32CPUs
+  - 256GB RAM
+  - 500GB of scratch
+- `module load freesurfer` in a terminal window to activate freesurfer env
+- Use neurodesktop icon to run FreeView!
+- Thanks to [stebo85](https://github.com/stebo85) :heart:
+
+**2) Downalod and Install**
+- https://surfer.nmr.mgh.harvard.edu/fswiki/rel7downloads
+- Make a directory for subject data
+- `SUBJECTS export_DIR=/home/my/freesurfer-subjects-dir`
+- `export FREESURFER_HOME=/home/my/freesurfer-dir`
+- `source $FREESURFER_HOME/SetUpFreeSurfer.sh`
+
+**3) Downlod a Virtual Machine**
+- And run it in virtualbox
+- [Instructions](https://surfer.nmr.mgh.harvard.edu/fswiki/VM_67)
 
 ### Get some data:
 
@@ -59,31 +83,6 @@ docker run pwighton/neurodocker:20220822 generate docker \
       version=7.2.0 \
     | docker build -t pwighton/petsurfer:7.2.0 -
 ```
-
-### Setup a FreeSurfer env
-
-There are several ways to get a FreeSurfer env
-
-**1) BrainHack Cloud**
-- https://bhnam.neurodesk.org/
-- Authenticate via github to get a [neurodesk](https://www.neurodesk.org/) env with
-  - 32CPUs
-  - 256GB RAM
-  - 500GB of scratch
-- `module load freesurfer` in a terminal window to activate freesurfer env
-- Use neurodesktop icon to run FreeView!
-- Thanks to [stebo85](https://github.com/stebo85) :heart:
-
-**2) Downalod and Install**
-- https://surfer.nmr.mgh.harvard.edu/fswiki/rel7downloads
-- Make a directory for subject data
-- `SUBJECTS export_DIR=/home/my/freesurfer-subjects-dir`
-- `export FREESURFER_HOME=/home/my/freesurfer-dir`
-- `source $FREESURFER_HOME/SetUpFreeSurfer.sh`
-
-**3) Downlod a Virtual Machine**
-- And run it in virtualbox
-- [Instructions](https://surfer.nmr.mgh.harvard.edu/fswiki/VM_67)
 
 ## Exploring the data
 
@@ -203,13 +202,6 @@ freeview \
 
 More details [here](https://surfer.nmr.mgh.harvard.edu/fswiki/PetSurfer#Surface-basedanalysis)
 
-## Next Steps
-
-- Should more of `config.yaml` be exposed to the command line?
-- Does it make sense to collect config files for various openneuro repos?
-- What would the `config.yaml` for ds
-- What does full reproducibility of `docker build` look lile?
-
 ## Resources
 
 - [Petsurfer Wiki Page](https://surfer.nmr.mgh.harvard.edu/fswiki/PetSurfer)
@@ -217,3 +209,11 @@ More details [here](https://surfer.nmr.mgh.harvard.edu/fswiki/PetSurfer#Surface-
 - [PetSurfer Talk by Doug at last year’s BrainHack](https://youtu.be/1-sgAct6_NY?t=1583)
 - [FreeSurfer Mailing List](http://mail.nmr.mgh.harvard.edu/mailman/listinfo/freesurfer)
 - [FreeSurfer License Keys](https://surfer.nmr.mgh.harvard.edu/registration.html)
+
+## Next Steps
+
+- Should more of `config.yaml` be exposed to the command line?
+- Does it make sense to collect config files for various openneuro repos?
+- What would the `config.yaml` be for [ds001705](https://openneuro.org/datasets/ds001705/versions/1.0.1)?
+- What does full reproducibility of `docker build` look like?
+- What does a voxel-based PET analysis look like?
