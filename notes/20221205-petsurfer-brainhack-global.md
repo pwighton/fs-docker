@@ -13,6 +13,8 @@ There are several ways to get a FreeSurfer env
 
 **1) BrainHack Cloud**
 - https://bhnam.neurodesk.org/
+- https://bheurope.neurodesk.org/
+- https://bhsydney.neurodesk.org/
 - Authenticate via github to get a [neurodesk](https://www.neurodesk.org/) env with
   - 32CPUs
   - 256GB RAM
