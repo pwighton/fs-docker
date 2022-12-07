@@ -145,7 +145,7 @@ See [`config.yaml`](https://github.com/openneuropet/PET_pipelines/blob/main/pet_
   - [The mcflirt input interface in nipype](https://github.com/nipy/nipype/blob/c3020e271785cfd31148eeb322eeb369baa12137/nipype/interfaces/fsl/preprocess.py#L804) 
 - [`coregistration`](https://github.com/openneuropet/PET_pipelines/blob/f77ffdb147e669bd641d32d00c98fbf6800a4185/pet_nipype/petpipeline/PETPipeline.py#L108) vars are passed to [mricoreg](https://surfer.nmr.mgh.harvard.edu/fswiki/mri_coreg)
   - [The mricoreg interface in nipype](https://github.com/nipy/nipype/blob/c3020e271785cfd31148eeb322eeb369baa12137/nipype/interfaces/freesurfer/registration.py#L399)
-- [`reconall`] run's freesurfer's [recon-all](https://surfer.nmr.mgh.harvard.edu/fswiki/ReconAllDevTable) stream
+- `reconall` run's freesurfer's [recon-all](https://surfer.nmr.mgh.harvard.edu/fswiki/ReconAllDevTable) stream
 - [`partial_volume_correction`](https://github.com/openneuropet/PET_pipelines/blob/f77ffdb147e669bd641d32d00c98fbf6800a4185/pet_nipype/petpipeline/PETPipeline.py#L138) vars are passed to [mri_gtmpvc](https://surfer.nmr.mgh.harvard.edu/fswiki/PetSurfer)
   - [The mri_gtmpvc interface in nipype](https://github.com/nipy/nipype/blob/master/nipype/interfaces/freesurfer/petsurfer.py) 
   - Numbers in `km_ref` and `km_hb` refer to labels in [FreeSurfer's Lookup table](https://github.com/freesurfer/freesurfer/blob/dev/distribution/FreeSurferColorLUT.txt)
