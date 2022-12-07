@@ -20,13 +20,13 @@ There are several ways to get a FreeSurfer env
   - 256GB RAM
   - 500GB of scratch
 - `module load freesurfer` in a terminal window to activate freesurfer env
-- Use neurodesktop icon to run FreeView!
+- Use neurodesktop icon to run FreeView in a terminal! Note, you might need to run the module load freesurfer again in the terminal before freeview opens up.
 - Thanks to [stebo85](https://github.com/stebo85) :heart:
 
 **2) Downalod and Install**
 - https://surfer.nmr.mgh.harvard.edu/fswiki/rel7downloads
 - Make a directory for subject data
-- `SUBJECTS export_DIR=/home/my/freesurfer-subjects-dir`
+- `export SUBJECTS_DIR=/home/my/freesurfer-subjects-dir`
 - `export FREESURFER_HOME=/home/my/freesurfer-dir`
 - `source $FREESURFER_HOME/SetUpFreeSurfer.sh`
 
@@ -69,7 +69,7 @@ docker run -it --rm \
       -d ${BASEDIR}/${DATASET_NAME}
 ```
 
-You can get a `license.txt file` for FreeSurfer [here](https://surfer.nmr.mgh.harvard.edu/registration.html)
+You can get a `license.txt file` for FreeSurfer [here](https://surfer.nmr.mgh.harvard.edu/registration.html) (This is not necessary of you are using the BrainHack cloud.)
 
 The container `pwighton/petsurfer-bids:7.2.0` was created using [this Dockerfile](https://github.com/pwighton/fs-docker/blob/master/petsurfer-bids/dockerfile) which installes this [nipype pipeline](https://github.com/openneuropet/PET_pipelines/tree/main/pet_nipype).  The parent container of `pwighton/petsurfer-bids:7.2.0` is `pwighton/petsurfer:7.2.0` which was created with the following [neurodocker](https://github.com/ReproNim/neurodocker) command:
 
@@ -85,6 +85,8 @@ docker run pwighton/neurodocker:20220822 generate docker \
       version=7.2.0 \
     | docker build -t pwighton/petsurfer:7.2.0 -
 ```
+
+You cannot run this docker command on the Brainhack cloud, but you can explore the data that comes out of it as shown below.
 
 ## Exploring the data
 
@@ -152,7 +154,7 @@ See [`config.yaml`](https://github.com/openneuropet/PET_pipelines/blob/main/pet_
   - [The mri_gtmpvc interface in nipype](https://github.com/nipy/nipype/blob/master/nipype/interfaces/freesurfer/petsurfer.py) 
   - Numbers in `km_ref` and `km_hb` refer to labels in [FreeSurfer's Lookup table](https://github.com/freesurfer/freesurfer/blob/dev/distribution/FreeSurferColorLUT.txt)
 
-## Vieweing some data
+## Viewing some data
 
 In MRI space:
 ```
