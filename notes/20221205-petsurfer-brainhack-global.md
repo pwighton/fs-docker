@@ -152,7 +152,7 @@ See [`config.yaml`](https://github.com/openneuropet/PET_pipelines/blob/main/pet_
   - [The mri_gtmpvc interface in nipype](https://github.com/nipy/nipype/blob/master/nipype/interfaces/freesurfer/petsurfer.py) 
   - Numbers in `km_ref` and `km_hb` refer to labels in [FreeSurfer's Lookup table](https://github.com/freesurfer/freesurfer/blob/dev/distribution/FreeSurferColorLUT.txt)
 
-## Vieweing some data
+## Viewing some data
 
 In MRI space:
 ```
