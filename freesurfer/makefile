@@ -9,3 +9,6 @@
 
 7.3.2:
 	docker build -t freesurfer/freesurfer:7.3.2 -f ./Dockerfile.7.3.2 .
+
+7.4.1:
+	docker build -t freesurfer/freesurfer:7.4.1 -f ./Dockerfile.7.4.1 .
