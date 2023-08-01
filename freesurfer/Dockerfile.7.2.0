@@ -7,7 +7,7 @@ WORKDIR /root
 
 # install utils
 RUN yum -y update
-RUN yum -y install bc libgomp perl tar tcsh wget vim-common
+RUN yum -y install bc libgomp perl procps tar tcsh wget vim-common
 RUN yum -y install mesa-libGL libXext libSM libXrender libXmu
 RUN yum clean all
 
