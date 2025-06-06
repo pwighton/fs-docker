@@ -14,7 +14,10 @@ From: rockylinux:8
     dnf install -y freesurfer-Rocky8-8.0.0-1.x86_64.rpm && \
     dnf clean all && \
     rm freesurfer-Rocky8-8.0.0-1.x86_64.rpm
-    
+
+    # Set FREESURFER_HOME for the patch script
+    export FREESURFER_HOME=/usr/local/freesurfer/8.0.0-1
+
     # Patch freesurfer
     wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/fs8_updates.sh && \
     source ./fs8_updates.sh && \
