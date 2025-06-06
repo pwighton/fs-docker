@@ -1,0 +1,45 @@
+Bootstrap: docker
+From: rockylinux:8
+
+%post
+    # Install:
+    #  - wget to grab FreeSurfer install files
+    #  - findutils to run find inside the conainer (quality of life)
+    #  - libgomp, needed for FreeSurfer
+    dnf -y update && \
+    dnf -y install wget findutils libgomp
+    
+    # Install FreeSurfer
+    wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/freesurfer-Rocky8-8.0.0-1.x86_64.rpm && \
+    dnf install -y freesurfer-Rocky8-8.0.0-1.x86_64.rpm && \
+    dnf clean all && \
+    rm freesurfer-Rocky8-8.0.0-1.x86_64.rpm
+    
+    # Patch freesurfer
+    wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/fs8_updates.sh && \
+    source ./fs8_updates.sh && \
+    rm fs8_updates.sh
+
+# Set the FreeSurfer-related environment variables.  Everything other than
+# FREESURFER_HOME and SUBJECTS_DIR is what would get set by running
+# `source $FREESURFER_HOME/SetUpFreeSurfer.sh`
+%environment
+    export FREESURFER_HOME=/usr/local/freesurfer/8.0.0-1
+    export SUBJECTS_DIR=/usr/local/freesurfer/8.0.0-1/subjects
+    export FIX_VERTEX_AREA=
+    export FMRI_ANALYSIS_DIR=/usr/local/freesurfer/8.0.0-1/fsfast
+    export FREESURFER_HOME_FSPYTHON=/usr/local/freesurfer/8.0.0-1
+    export FREESURFER=/usr/local/freesurfer/8.0.0-1
+    export FSFAST_HOME=/usr/local/freesurfer/8.0.0-1/fsfast
+    export FSF_OUTPUT_FORMAT=nii.gz
+    export FS_OVERRIDE=0
+    export FUNCTIONALS_DIR=/usr/local/freesurfer/8.0.0-1/sessions
+    export LOCAL_DIR=/usr/local/freesurfer/8.0.0-1/local
+    export MINC_BIN_DIR=/usr/local/freesurfer/8.0.0-1/mni/bin
+    export MINC_LIB_DIR=/usr/local/freesurfer/8.0.0-1/mni/lib
+    export MNI_DATAPATH=/usr/local/freesurfer/8.0.0-1/mni/data
+    export MNI_DIR=/usr/local/freesurfer/8.0.0-1/mni
+    export MNI_PERL5LIB=/usr/local/freesurfer/8.0.0-1/mni/share/perl5
+    export OS=Linux
+    export PATH=/usr/local/freesurfer/8.0.0-1/bin:/usr/local/freesurfer/8.0.0-1/fsfast/bin:/usr/local/freesurfer/8.0.0-1/tktools:/usr/local/freesurfer/8.0.0-1/mni/bin:${PATH}
+    export PERL5LIB=/usr/local/freesurfer/8.0.0-1/mni/share/perl5
