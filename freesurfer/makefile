@@ -15,3 +15,6 @@
 
 8.0.0:
 	docker build -t freesurfer/freesurfer:8.0.0 -f ./Dockerfile.8.0.0 .
+
+8.1.0:
+	docker build -t freesurfer/freesurfer:8.1.0 -f ./Dockerfile.8.1.0 .

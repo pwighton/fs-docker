@@ -7,7 +7,7 @@ From: rockylinux:8
     #  - findutils to run find inside the conainer (quality of life)
     #  - libgomp, needed for FreeSurfer
     dnf -y update && \
-    dnf -y install wget findutils libgomp
+    dnf -y install wget findutils libgomp procps-ng
     
     # Install FreeSurfer
     wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/freesurfer-Rocky8-8.0.0-1.x86_64.rpm && \
@@ -19,9 +19,9 @@ From: rockylinux:8
     export FREESURFER_HOME=/usr/local/freesurfer/8.0.0-1
 
     # Patch freesurfer
-    wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/fs8_updates.sh && \
-    source ./fs8_updates.sh && \
-    rm fs8_updates.sh
+    wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/fs800_updates.sh && \
+    source ./fs800_updates.sh && \
+    rm fs800_updates.sh
 
 # Set the FreeSurfer-related environment variables.  Everything other than
 # FREESURFER_HOME and SUBJECTS_DIR is what would get set by running

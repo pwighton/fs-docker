@@ -7,13 +7,21 @@ WORKDIR /root
 #  - findutils to run find inside the conainer (quality of life)
 #  - libgomp, needed for FreeSurfer
 RUN dnf -y update && \
-    dnf -y install wget findutils libgomp
+    dnf -y install wget findutils libgomp procps-ng
 
 # Install FreeSurfer
 RUN wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/freesurfer-Rocky8-8.0.0-1.x86_64.rpm && \
     dnf install -y freesurfer-Rocky8-8.0.0-1.x86_64.rpm && \
     dnf clean all && \
     rm freesurfer-Rocky8-8.0.0-1.x86_64.rpm
+
+# Set FREESURFER_HOME for the patch script
+ENV FREESURFER_HOME=/usr/local/freesurfer/8.0.0-1
+    
+# Patch freesurfer
+RUN wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/fs800_updates.sh && \
+    source ./fs800_updates.sh && \
+    rm fs800_updates.sh
 
 # Set the FreeSurfer-related environment variables.  Everything other than
 # FREESURFER_HOME and SUBJECTS_DIR is what would get set by running
@@ -37,8 +45,3 @@ ENV FREESURFER_HOME=/usr/local/freesurfer/8.0.0-1 \
     OS=Linux \
     PATH=/usr/local/freesurfer/8.0.0-1/bin:/usr/local/freesurfer/8.0.0-1/fsfast/bin:/usr/local/freesurfer/8.0.0-1/tktools:/usr/local/freesurfer/8.0.0-1/mni/bin:${PATH} \
     PERL5LIB=/usr/local/freesurfer/8.0.0-1/mni/share/perl5
-
-# Patch freesurfer
-RUN wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/fs8_updates.sh && \
-    source ./fs8_updates.sh && \
-    rm fs8_updates.sh
