@@ -7,7 +7,7 @@ WORKDIR /root
 #  - findutils to run find inside the conainer (quality of life)
 #  - libgomp, needed for FreeSurfer
 RUN dnf -y update && \
-    dnf -y install wget findutils libgomp procps-ng
+    dnf -y install wget findutils libgomp procps-ng libXt libXext ncurses-compat-libs unzip
 
 # Install FreeSurfer
 RUN wget --progress=bar:force:noscroll https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/8.0.0/freesurfer-Rocky8-8.0.0-1.x86_64.rpm && \
@@ -45,3 +45,7 @@ ENV FREESURFER_HOME=/usr/local/freesurfer/8.0.0-1 \
     OS=Linux \
     PATH=/usr/local/freesurfer/8.0.0-1/bin:/usr/local/freesurfer/8.0.0-1/fsfast/bin:/usr/local/freesurfer/8.0.0-1/tktools:/usr/local/freesurfer/8.0.0-1/mni/bin:${PATH} \
     PERL5LIB=/usr/local/freesurfer/8.0.0-1/mni/share/perl5
+
+# Install Matlab Runtime R2012b
+# - See: https://surfer.nmr.mgh.harvard.edu/fswiki/MatlabRuntime
+RUN fs_install_mcr R2019b
