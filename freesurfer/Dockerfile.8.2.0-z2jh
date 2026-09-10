@@ -1,0 +1,95 @@
+# FreeSurfer 8.2.0 desktop for zero-to-jupyterhub (Z2JH)
+# =================================================================
+# See:
+#  - z2jh.jupyter.org
+#  - https://docs.jetstream-cloud.org/tutorial/classroom/overview/#jupyterhub
+#
+# DEPLOYMENT EXPECTATIONS (not provided by this image):
+# -----------------------------------------------------------------
+#  1. Shared volume mounted at /home/jovyan/shared/
+#     In the CACAO Z2JH template, enable "Shared Storage" with
+#     storage directory /home/jovyan/shared
+#  2. FS_LICENSE defaults to `/home/jovyan/shared/license.txt`
+#     Obtain from: https://surfer.nmr.mgh.harvard.edu/registration.html
+#  3. SUBJECTS_DIR defaults to `/home/jovyan/fs-subjects`
+#     SUBJECTS_DIR is created on first use and lives on the user's home 
+#     persistent volume.
+#  4. TUTORIAL_DATA deafults to `/home/jovyan/shared/fs-tutorial-data`
+#     If using tutorial data, it should be located at TUTORIAL_DATA
+#     see https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/Data)
+
+FROM quay.io/jupyter/base-notebook:latest
+
+USER root
+ENV DEBIAN_FRONTEND=noninteractive
+
+# FreeSurfer 8.2.0 + updates
+# See: https://gist.github.com/pwighton/cda5fb329f7dda0985c2333009209dca
+# -----------------------------------------------------------------
+ARG FS_VERSION=8.2.0
+ENV FREESURFER_HOME=/usr/local/freesurfer/${FS_VERSION}
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      wget findutils libgomp1 procps libxt6 libxext6 libncurses6 unzip \
+    && wget --progress=dot:giga "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FS_VERSION}/freesurfer_ubuntu24-${FS_VERSION}_amd64.deb" -O /tmp/fs.deb \
+    && apt-get install -y /tmp/fs.deb \
+    && rm /tmp/fs.deb \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN wget -q "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FS_VERSION}/fs820_updates.sh" -O /tmp/fs820_updates.sh \
+    && set +o pipefail \
+    && yes y | tr -d '\n' | FREESURFER_HOME=${FREESURFER_HOME} bash /tmp/fs820_updates.sh \
+    && set -o pipefail \
+    && rm /tmp/fs820_updates.sh
+
+# Desktop + VNC
+# -----------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      xfce4 xfce4-terminal xfce4-settings dbus-x11 x11-xserver-utils \
+      tigervnc-standalone-server tigervnc-tools \
+      mesa-utils mesa-utils-extra glmark2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN mamba install -y -c conda-forge websockify && \
+    pip install --no-cache-dir jupyter-remote-desktop-proxy
+
+# GPU rendering support (VirtualGL)
+# On GPU workers, the NVIDIA container toolkit injects driver libraries at
+# runtime; VirtualGL's EGL backend (vglrun -d egl0) then renders FreeView on
+# the GPU.
+# -----------------------------------------------------------------
+ARG VGL_VERSION=3.1.5
+RUN wget -q "https://github.com/VirtualGL/virtualgl/releases/download/${VGL_VERSION}/virtualgl_${VGL_VERSION}_amd64.deb" -O /tmp/vgl.deb \
+    && apt-get update && apt-get install -y /tmp/vgl.deb \
+    && rm /tmp/vgl.deb \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+
+# Environment for the shell of each user inside jupyterhub
+# -----------------------------------------------------------------
+ENV SUBJECTS_DIR=/home/jovyan/fs-subjects \
+    FS_LICENSE=/home/jovyan/shared/license.txt \
+    TUTORIAL_DATA=/home/jovyan/shared/fs-tutorial-data
+RUN printf '%s\n' \
+      'export FREESURFER_HOME='"${FREESURFER_HOME}" \
+      'source $FREESURFER_HOME/SetUpFreeSurfer.sh' \
+      'mkdir -p "$SUBJECTS_DIR"' \
+      '[ -f "$FS_LICENSE" ] || echo "WARNING: FreeSurfer license not found at $FS_LICENSE — is the shared volume mounted?" >&2' \
+      '# GPU workers: route FreeSurfer GUIs through VirtualGL (llvmpipe otherwise)' \
+      'if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then' \
+      '  alias freeview='"'"'vglrun -d egl0 freeview'"'"'' \
+      '  alias tkmeditfv='"'"'vglrun -d egl0 tkmeditfv'"'"'' \
+      'fi' \
+      > /etc/profile.d/freesurfer.sh && \
+    echo 'source /etc/profile.d/freesurfer.sh' >> /etc/bash.bashrc
+
+# Compositing off by default for every user
+# -----------------------------------------------------------------
+RUN mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml && \
+    printf '%s\n' \
+      '<?xml version="1.0" encoding="UTF-8"?>' \
+      '<channel name="xfwm4" version="1.0">' \
+      '  <property name="general" type="empty">' \
+      '    <property name="use_compositing" type="bool" value="false"/>' \
+      '  </property>' \
+      '</channel>' \
+      > /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
+
+USER ${NB_UID}

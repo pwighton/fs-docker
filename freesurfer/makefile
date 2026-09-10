@@ -21,3 +21,6 @@
 
 8.2.0:
 	docker build -t freesurfer/freesurfer:8.2.0 -f ./Dockerfile.8.2.0 .
+
+8.2.0-z2jh:
+	docker build -t freesurfer/freesurfer:8.2.0-z2jh -f ./Dockerfile.8.2.0-z2jh .
