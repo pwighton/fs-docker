@@ -6,8 +6,9 @@ WORKDIR /root
 #  - wget to grab FreeSurfer install files
 #  - findutils to run find inside the conainer (quality of life)
 #  - libgomp, needed for FreeSurfer
+#  - mesa-dri-drivers, needed by FreeView for software OpenGL rendering
 RUN dnf -y update && \
-    dnf -y install wget findutils libgomp procps-ng libXt libXext ncurses-compat-libs unzip python3
+    dnf -y install wget findutils libgomp procps-ng libXt libXext ncurses-compat-libs unzip python3 mesa-dri-drivers
 
 # Install FreeSurfer
 # - see: https://surfer.nmr.mgh.harvard.edu/fswiki/ReleaseNotes
@@ -49,4 +50,3 @@ RUN FREESURFER_HOME=$FREESURFER_HOME $FREESURFER_HOME/bin/fs_install_mcr R2019b
 
 # Not setting LD_LIBRARY_PATH by default because this breaks curl
 # ENV LD_LIBRARY_PATH=$FREESURFER_HOME/MCRv97/runtime/glnxa64:$FREESURFER_HOME/MCRv97/bin/glnxa64:$FREESURFER_HOME/MCRv97/sys/os/glnxa64:$FREESURFER_HOME/MCRv97/extern/bin/glnxa64
-
