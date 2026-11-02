@@ -1,0 +1,15 @@
+#!/bin/bash
+# FreeView wrapper: on GPU nodes, render through VirtualGL's EGL backend.
+# tkmeditfv, tksurferfv and tkregisterfv start `freeview` by name, so they get
+# this too. Without a GPU, run plain FreeView (Mesa llvmpipe).
+real="${FREESURFER_HOME:?FREESURFER_HOME is not set}/bin/freeview"
+
+# Already under vglrun (e.g. `vglrun freeview`): don't wrap it twice.
+case "$LD_PRELOAD" in
+  *vglfaker*) exec "$real" "$@" ;;
+esac
+
+if command -v vglrun >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
+  exec vglrun -d "${VGL_DISPLAY:-egl0}" "$real" "$@"
+fi
+exec "$real" "$@"

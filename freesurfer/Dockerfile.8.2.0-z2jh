@@ -87,22 +87,16 @@ RUN wget -q "https://github.com/VirtualGL/virtualgl/releases/download/${VGL_VERS
 ENV NVIDIA_DRIVER_CAPABILITIES=all
 
 # Environment for the shell of each user inside jupyterhub
+# The profile script puts the freeview wrapper (z2jh/bin/freeview) ahead of
+# $FREESURFER_HOME/bin, so freeview, tkmeditfv, tksurferfv and tkregisterfv
+# all render through VirtualGL on GPU workers.
 # -----------------------------------------------------------------
 ENV SUBJECTS_DIR=/home/jovyan/fs-subjects \
     FS_LICENSE=/home/jovyan/shared/license.txt \
     TUTORIAL_DATA=/home/jovyan/shared/fs-tutorial-data
-RUN printf '%s\n' \
-      'export FREESURFER_HOME='"${FREESURFER_HOME}" \
-      'source $FREESURFER_HOME/SetUpFreeSurfer.sh' \
-      'mkdir -p "$SUBJECTS_DIR"' \
-      '[ -f "$FS_LICENSE" ] || echo "WARNING: FreeSurfer license not found at $FS_LICENSE — is the shared volume mounted?" >&2' \
-      '# GPU workers: route FreeSurfer GUIs through VirtualGL (llvmpipe otherwise)' \
-      'if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then' \
-      '  alias freeview='"'"'vglrun -d egl0 freeview'"'"'' \
-      '  alias tkmeditfv='"'"'vglrun -d egl0 tkmeditfv'"'"'' \
-      'fi' \
-      > /etc/profile.d/freesurfer.sh && \
-    echo 'source /etc/profile.d/freesurfer.sh' >> /etc/bash.bashrc
+COPY --chmod=755 z2jh/bin/freeview /opt/fs-z2jh/bin/freeview
+COPY --chmod=644 z2jh/profile.d/freesurfer.sh /etc/profile.d/freesurfer.sh
+RUN echo 'source /etc/profile.d/freesurfer.sh' >> /etc/bash.bashrc
 
 # Compositing off by default for every user
 # -----------------------------------------------------------------
