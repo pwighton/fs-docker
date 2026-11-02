@@ -1,0 +1,396 @@
+#!/opt/conda/bin/python3
+"""fv-stress: FreeView load test for one user's desktop.
+
+Starts N FreeView instances showing fsaverage in the 3D view, rotates them at a
+fixed rate, and logs the frame rate each one actually delivers alongside CPU,
+GPU and VNC server load. Results go to a CSV (one row per instance per VirtualGL
+profiler report, roughly every 2 s) that `fv-stress-report` combines across
+users.
+
+Frame rates come from VirtualGL's profiler (`vglrun +pr`), whose "Total" line
+is the rate frames reach the X display. On GPU nodes FreeView renders through
+`vglrun -d egl0`; without a GPU it renders in software through `vglrun -d
+$DISPLAY`, which works for testing the tool but is not comparable.
+
+Rotation is driven through FreeView's -stdin option, which accepts command
+lines of the form `freeview -cam Azimuth 3`. FreeView folds pending commands
+into its next frame, so a rate it can't keep up with just yields its maximum
+frame rate. An idle FreeView redraws twice a second, so 2 fps is the floor.
+"""
+import argparse
+import csv
+import datetime
+import getpass
+import json
+import os
+import re
+import shutil
+import signal
+import socket
+import statistics
+import subprocess
+import sys
+import threading
+import time
+
+PROFILE_RE = re.compile(r"^(Readback|Blit|Total)\s+-.*?([\d.]+)\s*fps")
+X_SERVERS = ("Xtigervnc", "Xvnc", "Xvfb")
+COLUMNS = [
+    "t", "elapsed_s", "phase", "tag", "user", "pod", "node", "mode", "gpu_uuid",
+    "instance", "target_hz", "fps", "readback_fps", "blit_fps",
+    "freeview_cpu_pct", "xserver_cpu_pct", "pod_cpu_pct", "pod_cpu_limit",
+    "pod_throttled_pct", "pod_mem_mib", "node_cpu_pct", "gpu_util_pct", "gpu_mem_mib",
+]
+
+
+def read(path, default=None):
+    try:
+        with open(path) as f:
+            return f.read()
+    except OSError:
+        return default
+
+
+def proc_cpu_seconds(pid):
+    """User+system CPU seconds of a process, or None if it is gone."""
+    stat = read(f"/proc/{pid}/stat")
+    if not stat:
+        return None
+    fields = stat.rsplit(")", 1)[1].split()
+    return (int(fields[11]) + int(fields[12])) / os.sysconf("SC_CLK_TCK")
+
+
+def find_xserver(display):
+    """PID of the X server (Xtigervnc/Xvnc/Xvfb) serving `display`, if visible."""
+    num = display.split(":")[-1].split(".")[0]
+    for pid in filter(str.isdigit, os.listdir("/proc")):
+        if (read(f"/proc/{pid}/comm") or "").strip() in X_SERVERS:
+            args = (read(f"/proc/{pid}/cmdline") or "").split("\0")
+            if f":{num}" in args:
+                return int(pid)
+    return None
+
+
+class SystemSampler(threading.Thread):
+    """Samples node, pod (cgroup v2), process and GPU load once a second."""
+
+    def __init__(self, xserver_pid, gpu):
+        super().__init__(daemon=True)
+        self.xserver_pid = xserver_pid
+        self.freeview_pids = {}
+        self.latest = {}
+        self.lock = threading.Lock()
+        self.gpu = {}
+        if gpu:
+            threading.Thread(target=self._gpu_loop, daemon=True).start()
+
+    def _gpu_loop(self):
+        cmd = ["nvidia-smi", "--query-gpu=uuid,name,utilization.gpu,memory.used",
+               "--format=csv,noheader,nounits", "-l", "1"]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        for line in p.stdout:
+            parts = [x.strip() for x in line.split(",")]
+            if len(parts) == 4:
+                with self.lock:
+                    self.gpu = {"uuid": parts[0], "name": parts[1],
+                                "util": parts[2], "mem": parts[3]}
+
+    @staticmethod
+    def _node_cpu():
+        vals = [int(x) for x in read("/proc/stat").splitlines()[0].split()[1:]]
+        return sum(vals), vals[3] + vals[4]  # total, idle + iowait
+
+    @staticmethod
+    def _cgroup():
+        stat = dict(line.split() for line in (read("/sys/fs/cgroup/cpu.stat") or "").splitlines())
+        return {k: int(v) for k, v in stat.items()}
+
+    def run(self):
+        prev_t, prev_node, prev_cg = time.time(), self._node_cpu(), self._cgroup()
+        prev_proc = {}
+        while True:
+            time.sleep(1)
+            now, node, cg = time.time(), self._node_cpu(), self._cgroup()
+            wall = now - prev_t
+            snap = {}
+            dtotal = node[0] - prev_node[0]
+            if dtotal:
+                snap["node_cpu_pct"] = round(100 * (dtotal - (node[1] - prev_node[1])) / dtotal, 1)
+            if "usage_usec" in cg and "usage_usec" in prev_cg:
+                snap["pod_cpu_pct"] = round((cg["usage_usec"] - prev_cg["usage_usec"]) / (wall * 1e4), 1)
+            dperiods = cg.get("nr_periods", 0) - prev_cg.get("nr_periods", 0)
+            if dperiods > 0:
+                snap["pod_throttled_pct"] = round(
+                    100 * (cg["nr_throttled"] - prev_cg["nr_throttled"]) / dperiods, 1)
+            mem = read("/sys/fs/cgroup/memory.current")
+            if mem:
+                snap["pod_mem_mib"] = int(mem) // 2**20
+            pids = dict(self.freeview_pids)
+            if self.xserver_pid:
+                pids["xserver"] = self.xserver_pid
+            proc = {}
+            for key, pid in pids.items():
+                cpu = proc_cpu_seconds(pid)
+                if cpu is not None:
+                    proc[key] = cpu
+                    if key in prev_proc:
+                        snap[f"cpu_{key}"] = round(100 * (cpu - prev_proc[key]) / wall, 1)
+            with self.lock:
+                snap["gpu_util_pct"] = self.gpu.get("util", "")
+                snap["gpu_mem_mib"] = self.gpu.get("mem", "")
+                self.latest = snap
+            prev_t, prev_node, prev_cg, prev_proc = now, node, cg, proc
+
+    def snapshot(self):
+        with self.lock:
+            return dict(self.latest)
+
+
+class Instance:
+    """One FreeView under `vglrun +pr`, with a thread parsing its profiler output."""
+
+    def __init__(self, idx, cmd, env, on_report):
+        self.idx = idx
+        self.on_report = on_report
+        self.last = {}
+        self.tail = []
+        self.proc = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE,
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                                     text=True, errors="replace")
+        os.set_blocking(self.proc.stdin.fileno(), False)
+        threading.Thread(target=self._read, daemon=True).start()
+
+    def _read(self):
+        for line in self.proc.stderr:
+            m = PROFILE_RE.match(line.strip())
+            if not m:
+                self.tail = (self.tail + [line.rstrip()])[-20:]
+                continue
+            self.last[m.group(1)] = float(m.group(2))
+            if m.group(1) == "Total":
+                self.on_report(self, dict(self.last))
+
+    def send(self, line):
+        try:
+            os.write(self.proc.stdin.fileno(), (line + "\n").encode())
+            return True
+        except (BlockingIOError, BrokenPipeError):
+            return False
+
+    def alive(self):
+        return self.proc.poll() is None
+
+    def stop(self):
+        self.send("freeview -quit")
+
+
+def gpu_present():
+    return shutil.which("nvidia-smi") is not None and subprocess.run(
+        ["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+
+
+def freeview_args(fs_home, viewsize):
+    """The command `tkmeditfv fsaverage orig.mgz -aparc+aseg -surfs -aparc` runs, in the 3D view."""
+    subj = f"{fs_home}/subjects/fsaverage"
+    args = [f"{fs_home}/bin/freeview",
+            "-v", f"{subj}/mri/orig.mgz",
+            "-v", f"{subj}/mri/aparc+aseg.mgz:opacity=1:colormap=lut:outline=0"
+                  f":lut={fs_home}/FreeSurferColorLUT.txt"]
+    for surf, color in (("white", "yellow"), ("pial", "red")):
+        for hemi in ("lh", "rh"):
+            args += ["--surface", f"{subj}/surf/{hemi}.{surf}:edgecolor={color}"
+                     f":annot={subj}/label/{hemi}.aparc.annot:annot_outline=0:hide_in_3d=0"]
+    return args + ["--hide-3d-slices", "--view", "coronal", "-viewport", "3d",
+                   "-viewsize", str(viewsize[0]), str(viewsize[1]), "-stdin"]
+
+
+def default_out():
+    shared = os.path.expanduser("~/shared")
+    if os.path.isdir(shared) and os.access(shared, os.W_OK):
+        return os.path.join(shared, "fv-stress")
+    return os.path.expanduser("~/fv-stress")
+
+
+def screen_size():
+    out = subprocess.run(["xrandr", "--current"], capture_output=True, text=True).stdout \
+        if shutil.which("xrandr") else ""
+    m = re.search(r"current (\d+) x (\d+)", out)
+    return f"{m.group(1)}x{m.group(2)}" if m else ""
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    ap.add_argument("-n", "--instances", type=int, default=1, help="FreeView instances to run")
+    ap.add_argument("--rate", type=float, default=20, help="rotation steps per second")
+    ap.add_argument("--step", type=float, default=3, help="degrees per rotation step")
+    ap.add_argument("--duration", type=float, default=300, help="seconds of rotation")
+    ap.add_argument("--startup-wait", type=float, default=20,
+                    help="seconds to let fsaverage load before rotating")
+    ap.add_argument("--viewsize", type=int, nargs=2, default=[800, 600], metavar=("W", "H"),
+                    help="FreeView main viewport size")
+    ap.add_argument("--tag", default=datetime.date.today().strftime("%Y%m%d"),
+                    help="run name; results go in OUT/TAG/")
+    ap.add_argument("--out", default=default_out(), help="results directory")
+    ap.add_argument("--vgl-display", default=argparse.SUPPRESS, help="VirtualGL 3D display "
+                    "(default: $VGL_DISPLAY or egl0 with a GPU, $DISPLAY without)")
+    args = ap.parse_args()
+
+    display = os.environ.get("DISPLAY")
+    if not display:
+        sys.exit("fv-stress: DISPLAY is not set. Run it from the Desktop's terminal "
+                 "(or set DISPLAY=:1 while the Desktop is open).")
+    fs_home = os.environ.get("FREESURFER_HOME")
+    if not fs_home or not os.path.exists(f"{fs_home}/bin/freeview"):
+        sys.exit("fv-stress: FREESURFER_HOME is not set or has no bin/freeview.")
+    if not shutil.which("vglrun"):
+        sys.exit("fv-stress: vglrun (VirtualGL) not found; it provides the frame-rate measurement.")
+
+    gpu = gpu_present()
+    mode = "gpu" if gpu else "cpu"
+    vgl_display = getattr(args, "vgl_display", None) or (
+        os.environ.get("VGL_DISPLAY", "egl0") if gpu else display)
+    if not gpu:
+        print("fv-stress: no GPU found; rendering in software through VirtualGL on "
+              f"{vgl_display}. Fine for testing the tool, not comparable to GPU runs.", file=sys.stderr)
+
+    user = os.environ.get("JUPYTERHUB_USER") or getpass.getuser()
+    pod = socket.gethostname()
+    node = (read("/proc/sys/kernel/random/boot_id") or "").strip()[:8]
+    started = datetime.datetime.now()
+    outdir = os.path.join(args.out, args.tag)
+    os.makedirs(outdir, exist_ok=True)
+    base = os.path.join(outdir, f"{user}-{pod}-{started:%Y%m%dT%H%M%S}")
+
+    cmd = ["vglrun", "-d", vgl_display, "+pr"] + freeview_args(fs_home, args.viewsize)
+    cpu_max = (read("/sys/fs/cgroup/cpu.max") or "max").split()
+    cpu_limit = round(int(cpu_max[0]) / int(cpu_max[1]), 2) if cpu_max[0] != "max" else ""
+
+    xserver = find_xserver(display)
+    sampler = SystemSampler(xserver, gpu)
+    sampler.start()
+
+    csv_file = open(base + ".csv", "w", newline="")
+    writer = csv.DictWriter(csv_file, fieldnames=COLUMNS)
+    writer.writeheader()
+    lock = threading.Lock()
+    t0 = time.time()
+    rot_start = t0 + args.startup_wait
+    rot_end = rot_start + args.duration
+    last_report = {}
+    fps_rotating = {}
+
+    def on_report(inst, prof):
+        now = time.time()
+        prev = last_report.get(inst.idx, t0)
+        last_report[inst.idx] = now
+        # A report covers the time since the previous one: only count it as
+        # rotating if that whole interval was.
+        phase = ("rotating" if rot_start <= prev and now <= rot_end + 0.5
+                 else "startup" if now < rot_end else "stopping")
+        snap = sampler.snapshot()
+        gpu_info = sampler.gpu
+        row = {
+            "t": round(now, 2), "elapsed_s": round(now - t0, 1), "phase": phase, "tag": args.tag,
+            "user": user, "pod": pod, "node": node, "mode": mode,
+            "gpu_uuid": gpu_info.get("uuid", ""), "instance": inst.idx, "target_hz": args.rate,
+            "fps": prof.get("Total"), "readback_fps": prof.get("Readback"),
+            "blit_fps": prof.get("Blit"),
+            "freeview_cpu_pct": snap.get(f"cpu_{inst.idx}", ""),
+            "xserver_cpu_pct": snap.get("cpu_xserver", ""),
+            "pod_cpu_pct": snap.get("pod_cpu_pct", ""), "pod_cpu_limit": cpu_limit,
+            "pod_throttled_pct": snap.get("pod_throttled_pct", ""),
+            "pod_mem_mib": snap.get("pod_mem_mib", ""),
+            "node_cpu_pct": snap.get("node_cpu_pct", ""),
+            "gpu_util_pct": snap.get("gpu_util_pct", ""), "gpu_mem_mib": snap.get("gpu_mem_mib", ""),
+        }
+        if phase == "rotating":
+            fps_rotating.setdefault(inst.idx, []).append(row["fps"])
+        limit = f"/{cpu_limit * 100:.0f}" if cpu_limit else ""
+        with lock:
+            writer.writerow(row)
+            csv_file.flush()
+            print(f"{datetime.datetime.now():%H:%M:%S} i{inst.idx} {phase:9}"
+                  f"{row['fps']:6.1f} fps (target {args.rate:g})"
+                  f" | freeview {row['freeview_cpu_pct']}% X {row['xserver_cpu_pct']}%"
+                  f" | pod {row['pod_cpu_pct']}%{limit} thr {row['pod_throttled_pct'] or 0}%"
+                  f" | node {row['node_cpu_pct']}%"
+                  + (f" | gpu {row['gpu_util_pct']}% {row['gpu_mem_mib']}MiB" if gpu else ""),
+                  flush=True)
+
+    env = dict(os.environ)
+    instances = []
+    for i in range(args.instances):
+        inst = Instance(i, cmd, env, on_report)
+        sampler.freeview_pids[i] = inst.proc.pid
+        instances.append(inst)
+
+    meta = {
+        "tag": args.tag, "user": user, "pod": pod, "node": node, "mode": mode,
+        "started": started.isoformat(timespec="seconds"), "instances": args.instances,
+        "rate_hz": args.rate, "step_deg": args.step, "duration_s": args.duration,
+        "startup_wait_s": args.startup_wait, "viewsize": args.viewsize,
+        "screen": screen_size(), "display": display, "vgl_display": vgl_display,
+        "pod_cpu_limit": cpu_limit, "node_cpus": os.cpu_count(),
+        "freesurfer": (read(f"{fs_home}/build-stamp.txt") or "").strip(),
+        "command": cmd,
+    }
+    print(f"fv-stress: {args.instances} instance(s), {mode} mode, rotating "
+          f"{args.step:g} deg x {args.rate:g}/s for {args.duration:g}s after a "
+          f"{args.startup_wait:g}s load wait.\nResults: {base}.csv", flush=True)
+
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(1))
+    interrupted = False
+    try:
+        step = f"freeview -cam Azimuth {args.step:g}"
+        k = 0
+        while time.time() < rot_end and any(i.alive() for i in instances):
+            target = rot_start + k / args.rate
+            now = time.time()
+            if now < target:
+                time.sleep(min(target - now, 0.5))
+                continue
+            if now - target > 1:  # fell behind (e.g. suspended): skip ahead
+                k = int((now - rot_start) * args.rate)
+            for inst in instances:
+                inst.send(step)
+            k += 1
+    except (KeyboardInterrupt, SystemExit):
+        interrupted = True
+    finally:
+        for inst in instances:
+            inst.stop()
+        deadline = time.time() + 5
+        for inst in instances:
+            try:
+                inst.proc.wait(timeout=max(0.1, deadline - time.time()))
+            except subprocess.TimeoutExpired:
+                inst.proc.terminate()
+        csv_file.close()
+
+    meta["gpu"] = sampler.gpu.get("name", "")
+    meta["gpu_uuid"] = sampler.gpu.get("uuid", "")
+    meta["finished"] = datetime.datetime.now().isoformat(timespec="seconds")
+    meta["interrupted"] = interrupted
+    with open(base + ".json", "w") as f:
+        json.dump(meta, f, indent=2)
+
+    print("\nSummary (rotating phase):")
+    for inst in instances:
+        fps = fps_rotating.get(inst.idx, [])
+        if fps:
+            med = statistics.median(fps)
+            ok = "OK" if med >= 0.9 * args.rate else "BELOW TARGET"
+            print(f"  i{inst.idx}: median {med:.1f} fps, min {min(fps):.1f} "
+                  f"over {len(fps)} reports — {ok}")
+        else:
+            print(f"  i{inst.idx}: no rotating-phase reports")
+            if inst.tail:
+                print("    last FreeView output:\n      " + "\n      ".join(inst.tail[-5:]))
+    print(f"Results: {base}.csv")
+    if not fps_rotating:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

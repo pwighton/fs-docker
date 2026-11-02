@@ -1,0 +1,153 @@
+#!/opt/conda/bin/python3
+"""fv-stress-report: combine fv-stress results into FPS-versus-concurrency tables.
+
+Reads every fv-stress CSV under the given directories and keeps the rows from
+the rotating phase. For each node it splits time into windows, counts how many
+instances (and users) were rotating in each window, and groups the windows by
+that count. Each concurrency level reports the delivered FPS across instances
+(median, 10th percentile, worst) next to node CPU, GPU and X server load, and
+the first level where the 10th percentile falls below threshold x target is
+flagged as the point where FreeView starts to degrade.
+
+Instances that are still loading are not counted as concurrent, although they
+add load, so stagger starts by at least the load wait for clean levels.
+"""
+import argparse
+import csv
+import glob
+import os
+import statistics
+import sys
+from collections import defaultdict
+
+
+def pct(values, p):
+    """p-th percentile (0-100) with linear interpolation."""
+    vals = sorted(values)
+    if len(vals) == 1:
+        return vals[0]
+    k = (len(vals) - 1) * p / 100
+    lo = int(k)
+    hi = min(lo + 1, len(vals) - 1)
+    return vals[lo] + (vals[hi] - vals[lo]) * (k - lo)
+
+
+def num(row, key):
+    try:
+        return float(row[key])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def mean(values):
+    vals = [v for v in values if v is not None]
+    return statistics.fmean(vals) if vals else None
+
+
+def fmt(value, spec=".0f", suffix=""):
+    return "-" if value is None else f"{value:{spec}}{suffix}"
+
+
+def load(dirs):
+    rows = []
+    for d in dirs:
+        files = [d] if d.endswith(".csv") else glob.glob(os.path.join(d, "**", "*.csv"), recursive=True)
+        for path in files:
+            with open(path, newline="") as f:
+                for row in csv.DictReader(f):
+                    if row.get("phase") == "rotating" and num(row, "fps") is not None:
+                        row["_run"] = os.path.basename(path)
+                        rows.append(row)
+    return rows
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    ap.add_argument("dirs", nargs="+", help="fv-stress result directories (or CSV files)")
+    ap.add_argument("--window", type=float, default=10, help="seconds per time window")
+    ap.add_argument("--threshold", type=float, default=0.9,
+                    help="degraded when the 10th-percentile FPS < threshold x target")
+    ap.add_argument("--csv", help="also write the per-level table to this CSV file")
+    args = ap.parse_args()
+
+    rows = load(args.dirs)
+    if not rows:
+        sys.exit("fv-stress-report: no rotating-phase rows found.")
+
+    by_node = defaultdict(list)
+    for row in rows:
+        by_node[row["node"]].append(row)
+
+    table = []
+    for node, node_rows in sorted(by_node.items()):
+        # window -> instance -> its rows in that window
+        windows = defaultdict(lambda: defaultdict(list))
+        for row in node_rows:
+            inst = (row["_run"], row["instance"])
+            windows[int(float(row["t"]) // args.window)][inst].append(row)
+
+        levels = defaultdict(lambda: defaultdict(list))
+        for insts in windows.values():
+            n = len(insts)
+            lvl = levels[n]
+            lvl["windows"].append(1)
+            lvl["users"].append(len({r["user"] for rs in insts.values() for r in rs}))
+            for rs in insts.values():
+                fps = mean(num(r, "fps") for r in rs)
+                lvl["fps"].append(fps)
+                lvl["ratio"].append(fps / num(rs[0], "target_hz"))
+                lvl["freeview_cpu"].append(mean(num(r, "freeview_cpu_pct") for r in rs))
+                lvl["xserver_cpu"].append(mean(num(r, "xserver_cpu_pct") for r in rs))
+            all_rows = [r for rs in insts.values() for r in rs]
+            lvl["node_cpu"].append(mean(num(r, "node_cpu_pct") for r in all_rows))
+            lvl["gpu_util"].append(mean(num(r, "gpu_util_pct") for r in all_rows))
+            lvl["throttled"].append(max((num(r, "pod_throttled_pct") or 0) for r in all_rows))
+
+        modes = sorted({r["mode"] for r in node_rows})
+        gpus = sorted({r["gpu_uuid"] for r in node_rows if r["gpu_uuid"]})
+        targets = sorted({num(r, "target_hz") for r in node_rows})
+        print(f"\nNode {node}  mode={','.join(modes)}  target={'/'.join(f'{t:g}' for t in targets)} fps"
+              f"  runs={len({r['_run'] for r in node_rows})}  users={len({r['user'] for r in node_rows})}"
+              + (f"  gpu={','.join(g[:12] for g in gpus)}" if gpus else ""))
+        header = (f"{'inst':>4} {'users':>5} {'win':>4} {'median':>7} {'p10':>6} {'worst':>6}"
+                  f" {'fv cpu%':>8} {'X cpu%':>7} {'node cpu%':>9} {'gpu%':>5} {'thr%':>5}")
+        print(header)
+        print("-" * len(header))
+        degraded = None
+        for n in sorted(levels):
+            lvl = levels[n]
+            fps = [f for f in lvl["fps"] if f is not None]
+            p10_ratio = pct(lvl["ratio"], 10)
+            if degraded is None and p10_ratio < args.threshold:
+                degraded = n
+            entry = {
+                "node": node, "instances": n, "users": max(lvl["users"]), "windows": len(lvl["windows"]),
+                "median_fps": statistics.median(fps), "p10_fps": pct(fps, 10), "worst_fps": min(fps),
+                "freeview_cpu_pct": mean(lvl["freeview_cpu"]), "xserver_cpu_pct": mean(lvl["xserver_cpu"]),
+                "node_cpu_pct": mean(lvl["node_cpu"]), "gpu_util_pct": mean(lvl["gpu_util"]),
+                "max_throttled_pct": max(lvl["throttled"]), "degraded": p10_ratio < args.threshold,
+            }
+            table.append(entry)
+            print(f"{n:>4} {entry['users']:>5} {entry['windows']:>4}"
+                  f" {entry['median_fps']:>7.1f} {entry['p10_fps']:>6.1f} {entry['worst_fps']:>6.1f}"
+                  f" {fmt(entry['freeview_cpu_pct']):>8} {fmt(entry['xserver_cpu_pct']):>7}"
+                  f" {fmt(entry['node_cpu_pct']):>9} {fmt(entry['gpu_util_pct']):>5}"
+                  f" {fmt(entry['max_throttled_pct']):>5}"
+                  + ("  <- degraded" if entry["degraded"] else ""))
+        if degraded is None:
+            print(f"No degradation seen (10th-percentile FPS stayed >= {args.threshold:g} x target).")
+        else:
+            print(f"Degraded from {degraded} concurrent instance(s): 10th-percentile FPS "
+                  f"< {args.threshold:g} x target.")
+
+    if args.csv:
+        with open(args.csv, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=list(table[0]))
+            writer.writeheader()
+            writer.writerows(table)
+        print(f"\nWrote {args.csv}")
+
+
+if __name__ == "__main__":
+    main()

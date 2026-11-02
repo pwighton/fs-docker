@@ -98,6 +98,11 @@ COPY --chmod=755 z2jh/bin/freeview /opt/fs-z2jh/bin/freeview
 COPY --chmod=644 z2jh/profile.d/freesurfer.sh /etc/profile.d/freesurfer.sh
 RUN echo 'source /etc/profile.d/freesurfer.sh' >> /etc/bash.bashrc
 
+# FreeView stress test: fv-stress (run in a Desktop terminal) and fv-stress-report
+# See notes/20261102-z2jh-freeview-stress-test.md
+# -----------------------------------------------------------------
+COPY --chmod=755 z2jh/bin/fv-stress z2jh/bin/fv-stress-report /usr/local/bin/
+
 # Compositing off by default for every user
 # -----------------------------------------------------------------
 RUN mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml && \
