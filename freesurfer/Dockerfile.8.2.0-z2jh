@@ -14,9 +14,16 @@
 #  3. SUBJECTS_DIR defaults to `/home/jovyan/fs-subjects`
 #     SUBJECTS_DIR is created on first use and lives on the user's home 
 #     persistent volume.
-#  4. TUTORIAL_DATA deafults to `/home/jovyan/shared/fs-tutorial-data`
-#     If using tutorial data, it should be located at TUTORIAL_DATA
-#     see https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/Data)
+#  4. TUTORIAL_DATA_SRC defaults to `/home/jovyan/shared/fs-tutorial-data`
+#     If using tutorial data, put it there before students log in
+#     (see https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/Data).
+#     Each user's server copies it once, in the background, to TUTORIAL_DATA
+#     (`/home/jovyan/fs-tutorial-data`) on their home volume, which needs
+#     room for it plus their own outputs. A class starting at once reads it
+#     all at the same time, so have students log in once beforehand.
+#     `fs-tutorial-data status` shows progress, `fs-tutorial-data reset`
+#     makes a fresh copy, and TUTORIAL_DATA_AUTOCOPY=0 turns the automatic
+#     copy off (e.g. `docker run -e TUTORIAL_DATA_AUTOCOPY=0` for local tests).
 
 ARG BASE_IMAGE=quay.io/jupyter/base-notebook:latest
 
@@ -93,10 +100,23 @@ ENV NVIDIA_DRIVER_CAPABILITIES=all
 # -----------------------------------------------------------------
 ENV SUBJECTS_DIR=/home/jovyan/fs-subjects \
     FS_LICENSE=/home/jovyan/shared/license.txt \
-    TUTORIAL_DATA=/home/jovyan/shared/fs-tutorial-data
+    TUTORIAL_DATA=/home/jovyan/fs-tutorial-data \
+    TUTORIAL_DATA_SRC=/home/jovyan/shared/fs-tutorial-data \
+    TUTORIAL_DATA_AUTOCOPY=1
 COPY --chmod=755 z2jh/bin/freeview /opt/fs-z2jh/bin/freeview
 COPY --chmod=644 z2jh/profile.d/freesurfer.sh /etc/profile.d/freesurfer.sh
 RUN echo 'source /etc/profile.d/freesurfer.sh' >> /etc/bash.bashrc
+
+# Per-user tutorial data: fs-tutorial-data copies TUTORIAL_DATA_SRC to
+# TUTORIAL_DATA once, started in the background by the Jupyter server config.
+# (rsync installed here, not with the packages above, to keep their layers cached)
+# -----------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends rsync \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY --chmod=755 z2jh/bin/fs-tutorial-data /usr/local/bin/
+# Fail the build rather than overwrite a config the base image might add here
+RUN [ ! -e /usr/local/etc/jupyter/jupyter_server_config.py ]
+COPY --chmod=644 z2jh/jupyter/jupyter_server_config.py /usr/local/etc/jupyter/
 
 # FreeView stress test: fv-stress (run in a Desktop terminal) and fv-stress-report
 # See notes/20261102-z2jh-freeview-stress-test.md

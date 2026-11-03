@@ -1,0 +1,188 @@
+#!/bin/bash
+# fs-tutorial-data: give each user a private copy of the shared FreeSurfer
+# tutorial data ($TUTORIAL_DATA_SRC -> $TUTORIAL_DATA), made once.
+#
+#   fs-tutorial-data setup [--auto] [--background]
+#       Copy the data unless that has already been done. Started automatically
+#       (with --auto --background) when the Jupyter server starts and when a
+#       terminal opens; --auto does nothing if TUTORIAL_DATA_AUTOCOPY=0.
+#   fs-tutorial-data status [--short]
+#       Report whether the copy is done, in progress, waiting or failed.
+#   fs-tutorial-data reset [--delete] [--yes]
+#       Move the current copy aside (or delete it) and copy the data again.
+#
+# The copy goes to $TUTORIAL_DATA.partial and is renamed when complete, so
+# $TUTORIAL_DATA only ever holds a full copy; an interrupted copy resumes at
+# the next start. ~/.fs-tutorial-data.done records that the copy finished.
+set -u
+
+SRC=${TUTORIAL_DATA_SRC:-/home/jovyan/shared/fs-tutorial-data}
+DEST=${TUTORIAL_DATA:-$HOME/fs-tutorial-data}
+DEST=${DEST%/}
+PARTIAL=$DEST.partial
+MARKER=$HOME/.fs-tutorial-data.done
+LOCK=$HOME/.fs-tutorial-data.lock
+LOG=$HOME/.fs-tutorial-data.log
+SIZE=$HOME/.fs-tutorial-data.size
+
+log() {
+  echo "$(date '+%F %T') $*" >> "$LOG"
+  if [ -t 1 ]; then echo "$*"; fi
+}
+
+gb() { awk -v b="$1" 'BEGIN { printf "%.1f", b / 1e9 }'; }
+
+has_source() { [ -d "$SRC" ] && [ -n "$(ls -A "$SRC" 2>/dev/null)" ]; }
+
+# Copy SRC to DEST. The caller holds the lock and has checked the source.
+copy() {
+  local need part have
+  need=$(du -sb "$SRC" | cut -f1)
+  echo "$need" > "$SIZE"
+  part=$(du -sb "$PARTIAL" 2>/dev/null | cut -f1)
+  have=$(df --output=avail -B1 "$HOME" | tail -n 1)
+  if [ $((need - ${part:-0})) -gt "$have" ]; then
+    log "failed: not enough space in $HOME (need $(gb $((need - ${part:-0}))) GB," \
+        "$(gb "$have") GB free); free some space, or use: fs-tutorial-data reset --delete"
+    return 1
+  fi
+  log "copying $SRC to $DEST ($(gb "$need") GB)"
+  local progress=()
+  if [ -t 1 ]; then progress=(--info=progress2); fi
+  # Files become the user's own and private, whatever their mode on the share.
+  if ! nice -n 10 rsync -rlpt --chmod=u+rwX,go-rwx "${progress[@]}" "$SRC/" "$PARTIAL/"; then
+    log "failed: rsync stopped with an error; the copy will resume at the next start" \
+        "(or run: fs-tutorial-data setup)"
+    return 1
+  fi
+  mv "$PARTIAL" "$DEST" && chmod 700 "$DEST"
+  echo "$(date '+%F %T') copied from $SRC" > "$MARKER"
+  log "done: the tutorial data is in $DEST"
+}
+
+cmd_setup() {
+  local auto=0 background=0 arg
+  for arg in "$@"; do
+    case $arg in
+      --auto) auto=1 ;;
+      --background) background=1 ;;
+      *) usage ;;
+    esac
+  done
+  if [ $auto = 1 ] && [ "${TUTORIAL_DATA_AUTOCOPY:-1}" = 0 ]; then return 0; fi
+  [ -e "$MARKER" ] && return 0
+
+  exec 9>>"$LOCK"
+  if ! flock -n 9; then
+    [ $background = 1 ] || echo "A tutorial data copy is already running; check it with: fs-tutorial-data status"
+    return 0
+  fi
+  [ -e "$MARKER" ] && return 0
+  if ! has_source; then
+    log "waiting: no shared tutorial data at $SRC yet; it will be copied when the server" \
+        "next starts (or run: fs-tutorial-data setup)"
+    return 0
+  fi
+  if [ -e "$DEST" ]; then
+    log "failed: $DEST already exists but wasn't made by fs-tutorial-data;" \
+        "to set it aside and copy afresh, run: fs-tutorial-data reset"
+    return 1
+  fi
+  if [ $background = 1 ]; then
+    # The detached copy inherits fd 9, so it keeps holding the lock.
+    setsid -f "$0" _copy >> "$LOG" 2>&1 < /dev/null
+    return 0
+  fi
+  copy
+}
+
+cmd_status() {
+  local short=0
+  [ "${1:-}" = --short ] && short=1
+  if [ -e "$MARKER" ]; then
+    [ $short = 1 ] || echo "The tutorial data is ready in $DEST (since $(cut -d' ' -f1,2 "$MARKER"))."
+    return 0
+  fi
+  if [ -e "$LOCK" ] && ! flock -n "$LOCK" true; then
+    local total done_
+    total=$(cat "$SIZE" 2>/dev/null)
+    done_=$(du -sb "$PARTIAL" 2>/dev/null | cut -f1)
+    if [ -n "$total" ] && [ -n "$done_" ] && [ "$total" -gt 0 ]; then
+      echo "The tutorial data is being copied to $DEST (one time): $(gb "$done_") of" \
+           "$(gb "$total") GB ($((100 * done_ / total))%). Check again with: fs-tutorial-data status"
+    else
+      echo "The tutorial data is being copied to $DEST (one time). Check again with: fs-tutorial-data status"
+    fi
+    return 0
+  fi
+  if [ "${TUTORIAL_DATA_AUTOCOPY:-1}" = 0 ]; then
+    [ $short = 1 ] || echo "The automatic tutorial data copy is off (TUTORIAL_DATA_AUTOCOPY=0). To copy now, run: fs-tutorial-data setup"
+    return 0
+  fi
+  local last
+  last=$(tail -n 1 "$LOG" 2>/dev/null | cut -d' ' -f3-)
+  case $last in
+    failed:*) echo "The tutorial data copy failed: ${last#failed: }" ;;
+    waiting:*) echo "Tutorial data: ${last#waiting: }" ;;
+    *)
+      if [ -d "$PARTIAL" ]; then
+        echo "The tutorial data copy was interrupted; it will resume when the server next starts" \
+             "(or run: fs-tutorial-data setup)"
+      else
+        echo "The tutorial data hasn't been copied yet. To copy it now, run: fs-tutorial-data setup"
+      fi ;;
+  esac
+}
+
+cmd_reset() {
+  local delete=0 yes=0 arg
+  for arg in "$@"; do
+    case $arg in
+      --delete) delete=1 ;;
+      --yes) yes=1 ;;
+      *) usage ;;
+    esac
+  done
+  exec 9>>"$LOCK"
+  if ! flock -n 9; then
+    echo "A tutorial data copy is running; wait for it to finish (fs-tutorial-data status)." >&2
+    return 1
+  fi
+  if ! has_source; then
+    echo "There's no shared tutorial data at $SRC to copy." >&2
+    return 1
+  fi
+  if [ $yes = 0 ] && [ -e "$DEST" ]; then
+    local action="Move $DEST to $DEST.bak-<time>"
+    [ $delete = 1 ] && action="DELETE $DEST (including any changes you made)"
+    read -r -p "$action and copy the tutorial data again? [y/N] " answer
+    case $answer in [yY]*) ;; *) echo "Nothing changed."; return 1 ;; esac
+  fi
+  if [ -e "$DEST" ]; then
+    if [ $delete = 1 ]; then
+      rm -rf -- "$DEST"
+      log "deleted $DEST"
+    else
+      local backup
+      backup=$DEST.bak-$(date +%Y%m%d-%H%M%S)
+      mv -- "$DEST" "$backup"
+      log "moved the old copy to $backup ($(du -sh "$backup" | cut -f1));" \
+          "delete it when you no longer need it"
+    fi
+  fi
+  rm -f "$MARKER"
+  copy
+}
+
+usage() {
+  sed -n '2,13s/^# \{0,1\}//p' "$0" >&2
+  exit 2
+}
+
+case ${1:-} in
+  setup) shift; cmd_setup "$@" ;;
+  status) shift; cmd_status "$@" ;;
+  reset) shift; cmd_reset "$@" ;;
+  _copy) copy ;;
+  *) usage ;;
+esac

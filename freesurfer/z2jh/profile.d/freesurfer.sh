@@ -11,3 +11,11 @@ _path="${_path//:\/opt\/fs-z2jh\/bin:/:}"
 _path="${_path#:}"
 export PATH="/opt/fs-z2jh/bin:${_path%:}"
 unset _path
+
+# Each user gets a private copy of the shared tutorial data, made once in the
+# background (normally started with the Jupyter server; this is a fallback).
+# Until it's done, say where it stands.
+if [ ! -e "$HOME/.fs-tutorial-data.done" ]; then
+  fs-tutorial-data setup --auto --background
+  fs-tutorial-data status --short
+fi
