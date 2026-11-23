@@ -32,7 +32,7 @@ ARG BASE_IMAGE=quay.io/jupyter/base-notebook:latest
 FROM ${BASE_IMAGE} AS freebrowse-build
 USER root
 ARG NODE_VERSION=24.22.2
-ARG FREEBROWSE_REF=v2.5.1
+ARG FREEBROWSE_REF=v2.5.2
 RUN wget -q "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz" -O - \
       | tar -xz --strip-components=1 -C /usr/local \
     && pip install --no-cache-dir hatchling hatch-nodejs-version
