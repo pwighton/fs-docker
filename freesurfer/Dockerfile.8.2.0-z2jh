@@ -76,10 +76,13 @@ RUN pip install --no-cache-dir jupyter-remote-desktop-proxy
 
 # FreeBrowse JupyterLab extension
 # The wheel installs the labextension and enables its server extension.
+# Files open in a new browser tab: JupyterHub single-user servers send
+# `frame-ancestors 'none'`, which blocks the viewer's iframe inside JupyterLab.
 # -----------------------------------------------------------------
 COPY --from=freebrowse-build /tmp/wheels/ /tmp/freebrowse-wheels/
 RUN pip install --no-cache-dir /tmp/freebrowse-wheels/*.whl \
     && rm -rf /tmp/freebrowse-wheels
+ENV FREEBROWSE_OPEN_IN=browser
 
 # GPU rendering support (VirtualGL)
 # On GPU workers, the NVIDIA container toolkit injects driver libraries at
